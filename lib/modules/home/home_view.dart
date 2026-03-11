@@ -20,7 +20,10 @@ class HomeView extends GetView<HomeController> {
 
     return Scaffold(
       backgroundColor: AppColors.background,
-      body: CustomScrollView(
+      body: RefreshIndicator(
+        onRefresh: controller.loadProducts,
+        child: CustomScrollView(
+        physics: const AlwaysScrollableScrollPhysics(),
         slivers: [
           // ── App Bar ──────────────────────────────────────────────
           SliverAppBar(
@@ -167,6 +170,7 @@ class HomeView extends GetView<HomeController> {
             );
           }),
         ],
+      ),
       ),
     );
   }

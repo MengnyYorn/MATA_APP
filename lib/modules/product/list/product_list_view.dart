@@ -14,6 +14,12 @@ class ProductListView extends GetView<ProductListController> {
     return Scaffold(
       appBar: AppBar(
         title: const Text('All Products'),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.refresh_rounded),
+            onPressed: controller.loadProducts,
+          ),
+        ],
         leading: IconButton(
           icon: const Icon(Icons.arrow_back_ios_rounded, size: 20),
           onPressed: Get.back,
@@ -46,12 +52,18 @@ class ProductListView extends GetView<ProductListController> {
 
           // Grid
           Expanded(
-            child: Obx(() {
+            child: RefreshIndicator(
+              onRefresh: controller.loadProducts,
+              child: Obx(() {
               if (controller.isLoading.value) {
                 return const Center(child: CircularProgressIndicator());
               }
               if (controller.products.isEmpty) {
-                return Center(
+                return ListView(
+                  physics: const AlwaysScrollableScrollPhysics(),
+                  children: [
+                    const SizedBox(height: 120),
+                    Center(
                   child: Column(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
@@ -63,6 +75,8 @@ class ProductListView extends GetView<ProductListController> {
                               .copyWith(color: AppColors.textSecondary)),
                     ],
                   ),
+                    ),
+                  ],
                 );
               }
               return GridView.builder(
@@ -80,6 +94,7 @@ class ProductListView extends GetView<ProductListController> {
                 ),
               );
             }),
+            ),
           ),
         ],
       ),
