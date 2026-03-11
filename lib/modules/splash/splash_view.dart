@@ -10,6 +10,8 @@ class SplashView extends GetView<SplashController> {
 
   @override
   Widget build(BuildContext context) {
+    // Ensure the controller is instantiated so `onReady()` runs and we navigate away.
+    controller;
     return Scaffold(
       backgroundColor: AppColors.primary,
       body: Center(
