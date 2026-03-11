@@ -21,6 +21,8 @@ import '../modules/orders/list/order_list_binding.dart';
 import '../modules/orders/list/order_list_view.dart';
 import '../modules/orders/detail/order_detail_binding.dart';
 import '../modules/orders/detail/order_detail_view.dart';
+import '../modules/profile/profile_binding.dart';
+import '../modules/profile/profile_view.dart';
 import 'app_routes.dart';
 
 class AppPages {
@@ -84,6 +86,12 @@ class AppPages {
       name: AppRoutes.orderDetail,
       page: () => const OrderDetailView(),
       binding: OrderDetailBinding(),
+      transition: Transition.rightToLeft,
+    ),
+    GetPage(
+      name: AppRoutes.profile,
+      page: () => const ProfileView(),
+      binding: ProfileBinding(),
       transition: Transition.rightToLeft,
     ),
   ];

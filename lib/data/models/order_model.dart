@@ -23,8 +23,15 @@ class OrderModel {
     date: json['date'] ?? json['createdAt'] ?? '',
     total: (json['total'] as num).toDouble(),
     status: OrderStatus.fromString(json['status'] ?? 'Pending'),
-    itemCount: json['itemCount'] ?? json['items'] ?? 0,
+    itemCount: _parseItemCount(json),
   );
+
+  static int _parseItemCount(Map<String, dynamic> json) {
+    final raw = json['itemCount'] ?? json['items'];
+    if (raw is int) return raw;
+    if (raw is List) return raw.length;
+    return 0;
+  }
 }
 
 enum OrderStatus {

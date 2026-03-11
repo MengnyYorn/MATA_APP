@@ -39,6 +39,7 @@ class HomeController extends GetxController {
   void goToProduct(String id) => Get.toNamed(AppRoutes.productDetailPath(id));
   void goToCart()    => Get.toNamed(AppRoutes.cart);
   void goToOrders()  => Get.toNamed(AppRoutes.orders);
+  void goToProfile() => Get.toNamed(AppRoutes.profile);
 
   String get userName => _authRepo.currentUser?.name.split(' ').first ?? 'Guest';
 

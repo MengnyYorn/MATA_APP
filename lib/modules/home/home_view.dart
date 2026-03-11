@@ -81,6 +81,14 @@ class HomeView extends GetView<HomeController> {
                 icon: const Icon(Icons.more_vert_rounded),
                 itemBuilder: (_) => [
                   PopupMenuItem(
+                    onTap: controller.goToProfile,
+                    child: const Row(children: [
+                      Icon(Icons.person_outline_rounded, size: 20),
+                      SizedBox(width: 12),
+                      Text('Profile'),
+                    ]),
+                  ),
+                  PopupMenuItem(
                     onTap: controller.goToOrders,
                     child: const Row(children: [
                       Icon(Icons.receipt_long_outlined, size: 20),

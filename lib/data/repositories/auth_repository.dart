@@ -1,53 +1,90 @@
 // lib/data/repositories/auth_repository.dart
 
+import 'dart:io' show Platform;
+
 import 'package:dartz/dartz.dart';
+import 'package:dio/dio.dart';
 import 'package:get_storage/get_storage.dart';
+
 import '../models/user_model.dart';
 import '../../core/constants/app_constants.dart';
 
-// Failure type
+// Failure type (shared by multiple repositories)
 class Failure {
   final String message;
   const Failure(this.message);
 }
 
 class AuthRepository {
+  AuthRepository({Dio? dio})
+      : _dio = dio ??
+            Dio(
+              BaseOptions(
+                baseUrl: _resolveBaseUrl(AppConstants.baseUrl),
+                connectTimeout: AppConstants.connectTimeout,
+                receiveTimeout: AppConstants.receiveTimeout,
+              ),
+            );
+
+  final Dio _dio;
   final _box = GetStorage();
 
-  // ── Static mock auth ─────────────────────────────────────────────
+  static String _resolveBaseUrl(String baseUrl) {
+    if (Platform.isAndroid && baseUrl.contains('localhost')) {
+      return baseUrl.replaceFirst('localhost', '10.0.2.2');
+    }
+    return baseUrl;
+  }
+
   Future<Either<Failure, UserModel>> login({
     required String email,
     required String password,
   }) async {
-    await Future.delayed(const Duration(seconds: 1)); // simulate network
-
-    // Mock validation
     if (email.isEmpty || password.isEmpty) {
-      return Left(const Failure('Email and password are required'));
-    }
-    if (!email.contains('@')) {
-      return Left(const Failure('Invalid email address'));
-    }
-    if (password.length < 6) {
-      return Left(const Failure('Password must be at least 6 characters'));
+      return const Left(Failure('Email and password are required'));
     }
 
-    // Mock user returned
-    final user = UserModel(
-      id: '1',
-      name: email.split('@')[0].replaceAll('.', ' ').split(' ')
-          .map((w) => w.isEmpty ? '' : '${w[0].toUpperCase()}${w.substring(1)}')
-          .join(' '),
-      email: email,
-      role: email.contains('admin') ? 'ADMIN' : 'CUSTOMER',
-      avatar: email.substring(0, 2).toUpperCase(),
-    );
+    try {
+      final res = await _dio.post(
+        '/auth/login',
+        data: {
+          'email': email,
+          'password': password,
+        },
+      );
 
-    // Persist session
-    await _box.write(AppConstants.keyAccessToken, 'mock_access_token_${user.id}');
-    await _box.write(AppConstants.keyUser, user.toJson());
+      final body = res.data;
+      final data = (body is Map<String, dynamic>) ? body['data'] : null;
+      if (data is! Map) {
+        return const Left(Failure('Invalid login response'));
+      }
 
-    return Right(user);
+      final accessToken = data['accessToken'] as String?;
+      final refreshToken = data['refreshToken'] as String?;
+      final userJson = data['user'] as Map<String, dynamic>?;
+
+      if (accessToken == null || userJson == null) {
+        return const Left(Failure('Missing token or user data'));
+      }
+
+      final user = UserModel.fromJson(userJson);
+
+      await _box.write(AppConstants.keyAccessToken, accessToken);
+      if (refreshToken != null) {
+        await _box.write(AppConstants.keyRefreshToken, refreshToken);
+      }
+      await _box.write(AppConstants.keyUser, user.toJson());
+
+      return Right(user);
+    } on DioException catch (e) {
+      final msg =
+          e.response?.data is Map && (e.response!.data['message'] is String)
+              ? e.response!.data['message'] as String
+              : e.message ?? 'Unable to sign in';
+      return Left(Failure(msg));
+    } catch (e) {
+      return Left(Failure(e.toString()));
+    }
   }
 
   Future<Either<Failure, UserModel>> register({
@@ -55,32 +92,63 @@ class AuthRepository {
     required String email,
     required String password,
   }) async {
-    await Future.delayed(const Duration(seconds: 1));
-
     if (name.isEmpty || email.isEmpty || password.isEmpty) {
-      return Left(const Failure('All fields are required'));
+      return const Left(Failure('All fields are required'));
     }
 
-    final user = UserModel(
-      id: DateTime.now().millisecondsSinceEpoch.toString(),
-      name: name,
-      email: email,
-      role: 'CUSTOMER',
-      avatar: name.substring(0, name.length.clamp(0, 2)).toUpperCase(),
-    );
+    try {
+      final res = await _dio.post(
+        '/auth/register',
+        data: {
+          'name': name,
+          'email': email,
+          'password': password,
+        },
+      );
 
-    await _box.write(AppConstants.keyAccessToken, 'mock_access_token_${user.id}');
-    await _box.write(AppConstants.keyUser, user.toJson());
+      final body = res.data;
+      final data = (body is Map<String, dynamic>) ? body['data'] : null;
+      if (data is! Map) {
+        return const Left(Failure('Invalid register response'));
+      }
 
-    return Right(user);
+      final accessToken = data['accessToken'] as String?;
+      final refreshToken = data['refreshToken'] as String?;
+      final userJson = data['user'] as Map<String, dynamic>?;
+
+      if (accessToken == null || userJson == null) {
+        return const Left(Failure('Missing token or user data'));
+      }
+
+      final user = UserModel.fromJson(userJson);
+
+      await _box.write(AppConstants.keyAccessToken, accessToken);
+      if (refreshToken != null) {
+        await _box.write(AppConstants.keyRefreshToken, refreshToken);
+      }
+      await _box.write(AppConstants.keyUser, user.toJson());
+
+      return Right(user);
+    } on DioException catch (e) {
+      final msg =
+          e.response?.data is Map && (e.response!.data['message'] is String)
+              ? e.response!.data['message'] as String
+              : e.message ?? 'Unable to register';
+      return Left(Failure(msg));
+    } catch (e) {
+      return Left(Failure(e.toString()));
+    }
   }
 
   Future<void> logout() async {
     await _box.remove(AppConstants.keyAccessToken);
+    await _box.remove(AppConstants.keyRefreshToken);
     await _box.remove(AppConstants.keyUser);
   }
 
-  bool get isLoggedIn => _box.read(AppConstants.keyAccessToken) != null;
+  bool get isLoggedIn => accessToken != null;
+
+  String? get accessToken => _box.read<String>(AppConstants.keyAccessToken);
 
   UserModel? get currentUser {
     final json = _box.read(AppConstants.keyUser);

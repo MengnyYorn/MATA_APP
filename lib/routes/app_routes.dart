@@ -5,6 +5,7 @@ abstract class AppRoutes {
   static const login    = '/login';
   static const register = '/register';
   static const home     = '/home';
+  static const profile  = '/profile';
   static const products = '/products';
   static const productDetail = '/product/:id';
   static const cart     = '/cart';
