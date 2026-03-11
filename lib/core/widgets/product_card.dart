@@ -10,8 +10,14 @@ import '../../data/models/product_model.dart';
 class ProductCard extends StatelessWidget {
   final ProductModel product;
   final VoidCallback onTap;
+  final VoidCallback? onFavoriteTap;
 
-  const ProductCard({super.key, required this.product, required this.onTap});
+  const ProductCard({
+    super.key,
+    required this.product,
+    required this.onTap,
+    this.onFavoriteTap,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -58,15 +64,26 @@ class ProductCard extends StatelessWidget {
                     Positioned(
                       top: 8,
                       right: 8,
-                      child: Container(
-                        width: 34,
-                        height: 34,
-                        decoration: BoxDecoration(
-                          color: Colors.white.withOpacity(0.9),
-                          shape: BoxShape.circle,
+                      child: GestureDetector(
+                        behavior: HitTestBehavior.opaque,
+                        onTap: () {
+                          if (onFavoriteTap != null) {
+                            onFavoriteTap!();
+                          }
+                        },
+                        child: Container(
+                          width: 34,
+                          height: 34,
+                          decoration: BoxDecoration(
+                            color: Colors.white.withOpacity(0.9),
+                            shape: BoxShape.circle,
+                          ),
+                          child: const Icon(
+                            Icons.favorite_border_rounded,
+                            size: 18,
+                            color: AppColors.textSecondary,
+                          ),
                         ),
-                        child: const Icon(Icons.favorite_border_rounded,
-                            size: 18, color: AppColors.textSecondary),
                       ),
                     ),
                   ],

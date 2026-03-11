@@ -4,6 +4,8 @@ import 'package:get/get.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_text_styles.dart';
 import '../../../core/widgets/product_card.dart';
+import '../../../data/repositories/auth_repository.dart';
+import '../../../data/repositories/wishlist_repository.dart';
 import 'product_list_controller.dart';
 
 class ProductListView extends GetView<ProductListController> {
@@ -90,7 +92,48 @@ class ProductListView extends GetView<ProductListController> {
                 itemCount: controller.products.length,
                 itemBuilder: (_, i) => ProductCard(
                   product: controller.products[i],
-                  onTap: () => controller.goToDetail(controller.products[i].id),
+                  onTap: () =>
+                      controller.goToDetail(controller.products[i].id),
+                  onFavoriteTap: () async {
+                    final auth = Get.find<AuthRepository>();
+                    if (!auth.isLoggedIn) {
+                      Get.dialog(
+                        AlertDialog(
+                          shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(20)),
+                          title: const Text('Sign in required'),
+                          content: const Text(
+                              'Please sign in to save items to your wishlist.'),
+                          actions: [
+                            TextButton(
+                              onPressed: Get.back,
+                              child: const Text('Later'),
+                            ),
+                            ElevatedButton(
+                              onPressed: () {
+                                Get.back();
+                                Get.toNamed('/login');
+                              },
+                              child: const Text('Sign in'),
+                            ),
+                          ],
+                        ),
+                      );
+                      return;
+                    }
+
+                    final wishlist = Get.find<WishlistRepository>();
+                    final added =
+                        await wishlist.toggle(controller.products[i].id);
+                    Get.snackbar(
+                      'Wishlist',
+                      added
+                          ? 'Added to your wishlist.'
+                          : 'Removed from your wishlist.',
+                      snackPosition: SnackPosition.BOTTOM,
+                      margin: const EdgeInsets.all(16),
+                    );
+                  },
                 ),
               );
             }),

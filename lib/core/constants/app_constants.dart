@@ -19,6 +19,7 @@ class AppConstants {
   static const String keyUser         = 'user';
   static const String keyCart         = 'cart';
   static const String keyOnboarding   = 'onboarding_done';
+  static const String keyWishlist     = 'wishlist';
 
   // Pagination
   static const int pageSize = 20;

@@ -14,6 +14,8 @@ class ProfileView extends GetView<ProfileController> {
 
   @override
   Widget build(BuildContext context) {
+    final isLoggedIn = controller.isLoggedIn;
+
     return Scaffold(
       appBar: AppBar(
         title: const Text('Profile'),
@@ -22,136 +24,149 @@ class ProfileView extends GetView<ProfileController> {
           onPressed: Get.back,
         ),
       ),
-      body: Obx(() {
-        final isLoggedIn = controller.isLoggedIn;
+      body: isLoggedIn ? _LoggedInProfile(controller: controller)
+                       : const _GuestProfile(),
+    );
+  }
+}
 
-        if (!isLoggedIn) {
-          return Center(
-            child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 32),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  const Icon(Icons.person_outline_rounded,
-                      size: 72, color: AppColors.textHint),
-                  const SizedBox(height: 16),
-                  Text(
-                    'You\'re browsing as guest',
-                    style: AppTextStyles.headline3,
-                    textAlign: TextAlign.center,
-                  ),
-                  const SizedBox(height: 8),
-                  Text(
-                    'Sign in to view and manage your profile, orders, and preferences.',
-                    style: AppTextStyles.bodyMedium
-                        .copyWith(color: AppColors.textSecondary),
-                    textAlign: TextAlign.center,
-                  ),
-                  const SizedBox(height: 28),
-                  AppButton(
-                    label: 'SIGN IN',
-                    onPressed: () => Get.toNamed(AppRoutes.login),
-                  ),
-                ],
-              ),
+class _GuestProfile extends StatelessWidget {
+  const _GuestProfile();
+
+  @override
+  Widget build(BuildContext context) {
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 32),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const Icon(Icons.person_outline_rounded,
+                size: 72, color: AppColors.textHint),
+            const SizedBox(height: 16),
+            Text(
+              'You\'re browsing as guest',
+              style: AppTextStyles.headline3,
+              textAlign: TextAlign.center,
             ),
-          );
-        }
+            const SizedBox(height: 8),
+            Text(
+              'Sign in to view and manage your profile, orders, and preferences.',
+              style: AppTextStyles.bodyMedium
+                  .copyWith(color: AppColors.textSecondary),
+              textAlign: TextAlign.center,
+            ),
+            const SizedBox(height: 28),
+            AppButton(
+              label: 'SIGN IN',
+              onPressed: () => Get.toNamed(AppRoutes.login),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
 
-        final name = controller.displayName;
-        final email = controller.email;
-        final role = controller.roleLabel;
-        final initials = controller.initials;
+class _LoggedInProfile extends StatelessWidget {
+  final ProfileController controller;
 
-        return SingleChildScrollView(
-          padding: const EdgeInsets.all(24),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Center(
-                child: Column(
-                  children: [
-                    Container(
-                      width: 88,
-                      height: 88,
-                      decoration: const BoxDecoration(
-                        color: AppColors.primary,
-                        shape: BoxShape.circle,
-                      ),
-                      child: Center(
-                        child: Text(
-                          initials,
-                          style: AppTextStyles.headline2
-                              .copyWith(color: Colors.white),
-                        ),
-                      ),
+  const _LoggedInProfile({required this.controller});
+
+  @override
+  Widget build(BuildContext context) {
+    final name = controller.displayName;
+    final email = controller.email;
+    final role = controller.roleLabel;
+    final initials = controller.initials;
+
+    return SingleChildScrollView(
+      padding: const EdgeInsets.all(24),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Center(
+            child: Column(
+              children: [
+                Container(
+                  width: 88,
+                  height: 88,
+                  decoration: const BoxDecoration(
+                    color: AppColors.primary,
+                    shape: BoxShape.circle,
+                  ),
+                  child: Center(
+                    child: Text(
+                      initials,
+                      style: AppTextStyles.headline2
+                          .copyWith(color: Colors.white),
                     ),
-                    const SizedBox(height: 16),
-                    Text(
-                      name,
-                      style: AppTextStyles.headline2,
-                      textAlign: TextAlign.center,
-                    ),
-                    const SizedBox(height: 4),
-                    Text(
-                      email,
-                      style: AppTextStyles.bodyMedium
-                          .copyWith(color: AppColors.textSecondary),
-                      textAlign: TextAlign.center,
-                    ),
-                    const SizedBox(height: 8),
-                    Container(
-                      padding: const EdgeInsets.symmetric(
-                          horizontal: 10, vertical: 4),
-                      decoration: BoxDecoration(
-                        color: AppColors.divider,
-                        borderRadius: BorderRadius.circular(20),
-                      ),
-                      child: Text(
-                        role,
-                        style: AppTextStyles.labelSmall
-                            .copyWith(color: AppColors.textSecondary),
-                      ),
-                    ),
-                  ],
+                  ),
                 ),
-              ),
-              const SizedBox(height: 32),
-              Text(
-                'ACCOUNT',
-                style: AppTextStyles.labelSmall.copyWith(letterSpacing: 2),
-              ),
-              const SizedBox(height: 16),
-              _Tile(
-                icon: Icons.receipt_long_outlined,
-                title: 'My Orders',
-                subtitle: 'Track and view your order history',
-                onTap: controller.goToOrders,
-              ),
-              const SizedBox(height: 8),
-              _Tile(
-                icon: Icons.mail_outline_rounded,
-                title: 'Email',
-                subtitle: email,
-                onTap: null,
-              ),
-              const SizedBox(height: 32),
-              Text(
-                'SECURITY',
-                style: AppTextStyles.labelSmall.copyWith(letterSpacing: 2),
-              ),
-              const SizedBox(height: 16),
-              _Tile(
-                icon: Icons.logout_rounded,
-                title: 'Sign out',
-                subtitle: 'Sign out of this device',
-                onTap: controller.logout,
-                danger: true,
-              ),
-            ],
+                const SizedBox(height: 16),
+                Text(
+                  name,
+                  style: AppTextStyles.headline2,
+                  textAlign: TextAlign.center,
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  email,
+                  style: AppTextStyles.bodyMedium
+                      .copyWith(color: AppColors.textSecondary),
+                  textAlign: TextAlign.center,
+                ),
+                const SizedBox(height: 8),
+                Container(
+                  padding: const EdgeInsets.symmetric(
+                      horizontal: 10, vertical: 4),
+                  decoration: BoxDecoration(
+                    color: AppColors.divider,
+                    borderRadius: BorderRadius.circular(20),
+                  ),
+                  child: Text(
+                    role,
+                    style: AppTextStyles.labelSmall
+                        .copyWith(color: AppColors.textSecondary),
+                  ),
+                ),
+              ],
+            ),
           ),
-        );
-      }),
+          const SizedBox(height: 32),
+          Text(
+            'ACCOUNT',
+            style: AppTextStyles.labelSmall.copyWith(letterSpacing: 2),
+          ),
+          const SizedBox(height: 16),
+          _Tile(
+            icon: Icons.receipt_long_outlined,
+            title: 'My Orders',
+            subtitle: 'Track and view your order history',
+            onTap: controller.goToOrders,
+          ),
+          const SizedBox(height: 8),
+          _Tile(
+            icon: Icons.mail_outline_rounded,
+            title: 'Email',
+            subtitle: email,
+            onTap: null,
+          ),
+          const SizedBox(height: 32),
+          Text(
+            'SECURITY',
+            style: AppTextStyles.labelSmall.copyWith(letterSpacing: 2),
+          ),
+          const SizedBox(height: 16),
+          _Tile(
+            icon: Icons.logout_rounded,
+            title: 'Sign out',
+            subtitle: 'Sign out of this device',
+            onTap: controller.logout,
+            danger: true,
+          ),
+        ],
+      ),
     );
   }
 }

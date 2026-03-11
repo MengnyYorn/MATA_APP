@@ -8,6 +8,8 @@ import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_text_styles.dart';
 import '../../core/widgets/product_card.dart';
 import '../../routes/app_routes.dart';
+import '../../data/repositories/auth_repository.dart';
+import '../../data/repositories/wishlist_repository.dart';
 import '../cart/cart_controller.dart';
 import 'home_controller.dart';
 
@@ -31,14 +33,17 @@ class HomeView extends GetView<HomeController> {
             backgroundColor: AppColors.surface,
             elevation: 0,
             titleSpacing: 24,
+            centerTitle: false,
             title: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
               children: [
-                Obx(() => Text(
+                const Text('MATA', style: AppTextStyles.headline3),
+                const SizedBox(height: 2),
+                Text(
                   'Hello, ${controller.userName} 👋',
                   style: AppTextStyles.bodySmall,
-                )),
-                const Text('MATA', style: AppTextStyles.headline3),
+                ),
               ],
             ),
             actions: [
@@ -164,7 +169,48 @@ class HomeView extends GetView<HomeController> {
                 delegate: SliverChildBuilderDelegate(
                   (_, i) => ProductCard(
                     product: controller.products[i],
-                    onTap: () => controller.goToProduct(controller.products[i].id),
+                    onTap: () =>
+                        controller.goToProduct(controller.products[i].id),
+                    onFavoriteTap: () async {
+                      final auth = Get.find<AuthRepository>();
+                      if (!auth.isLoggedIn) {
+                        Get.dialog(
+                          AlertDialog(
+                            shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(20)),
+                            title: const Text('Sign in required'),
+                            content: const Text(
+                                'Please sign in to save items to your wishlist.'),
+                            actions: [
+                              TextButton(
+                                onPressed: Get.back,
+                                child: const Text('Later'),
+                              ),
+                              ElevatedButton(
+                                onPressed: () {
+                                  Get.back();
+                                  Get.toNamed(AppRoutes.login);
+                                },
+                                child: const Text('Sign in'),
+                              ),
+                            ],
+                          ),
+                        );
+                        return;
+                      }
+
+                      final wishlist = Get.find<WishlistRepository>();
+                      final added =
+                          await wishlist.toggle(controller.products[i].id);
+                      Get.snackbar(
+                        'Wishlist',
+                        added
+                            ? 'Added to your wishlist.'
+                            : 'Removed from your wishlist.',
+                        snackPosition: SnackPosition.BOTTOM,
+                        margin: const EdgeInsets.all(16),
+                      );
+                    },
                   ),
                   childCount: controller.products.length,
                 ),
@@ -272,20 +318,38 @@ class _CategoryRow extends GetView<HomeController> {
             return GestureDetector(
               onTap: () => controller.selectCategory(cat),
               child: AnimatedContainer(
-                duration: const Duration(milliseconds: 200),
-                padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 8),
+                duration: const Duration(milliseconds: 180),
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 18, vertical: 6),
                 decoration: BoxDecoration(
-                  color: selected ? AppColors.primary : AppColors.surface,
-                  borderRadius: BorderRadius.circular(20),
+                  color:
+                      selected ? AppColors.primary : AppColors.surface,
+                  borderRadius: BorderRadius.circular(18),
                   border: Border.all(
-                    color: selected ? AppColors.primary : AppColors.border,
+                    color: selected
+                        ? AppColors.primary
+                        : AppColors.border,
+                    width: selected ? 1.4 : 1,
                   ),
+                  boxShadow: selected
+                      ? [
+                          BoxShadow(
+                            color: AppColors.cardShadow,
+                            blurRadius: 10,
+                            offset: const Offset(0, 4),
+                          ),
+                        ]
+                      : null,
                 ),
-                child: Text(
-                  cat,
-                  style: AppTextStyles.bodySmall.copyWith(
-                    color: selected ? Colors.white : AppColors.textSecondary,
-                    fontWeight: FontWeight.w600,
+                child: Center(
+                  child: Text(
+                    cat,
+                    style: AppTextStyles.bodySmall.copyWith(
+                      color:
+                          selected ? Colors.white : AppColors.textSecondary,
+                      fontWeight:
+                          selected ? FontWeight.w700 : FontWeight.w500,
+                    ),
                   ),
                 ),
               ),
