@@ -4,6 +4,7 @@ import 'package:get/get.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_text_styles.dart';
 import '../../../core/widgets/status_badge.dart';
+import '../../../routes/app_routes.dart';
 import 'order_list_controller.dart';
 
 class OrderListView extends GetView<OrderListController> {
@@ -16,7 +17,15 @@ class OrderListView extends GetView<OrderListController> {
         title: const Text('My Orders'),
         leading: IconButton(
           icon: const Icon(Icons.arrow_back_ios_rounded, size: 20),
-          onPressed: Get.back,
+          // After checkout we use Get.offAllNamed(orders), so there is no route
+          // to pop — fall back to home.
+          onPressed: () {
+            if (Navigator.of(context).canPop()) {
+              Get.back();
+            } else {
+              Get.offAllNamed(AppRoutes.home);
+            }
+          },
         ),
       ),
       body: Obx(() {

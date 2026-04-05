@@ -7,6 +7,7 @@ import 'package:get_storage/get_storage.dart';
 import 'core/theme/app_theme.dart';
 import 'routes/app_pages.dart';
 import 'routes/app_routes.dart';
+import 'data/repositories/auth_repository.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -38,6 +39,15 @@ class MataApp extends StatelessWidget {
       title: 'MATA Boutique',
       debugShowCheckedModeBanner: false,
       theme: AppTheme.light,
+      initialBinding: BindingsBuilder(
+        () {
+          // Make auth available across all deep-links (e.g. refreshing on `/orders`).
+          Get.put<AuthRepository>(
+            AuthRepository(),
+            permanent: true,
+          );
+        },
+      ),
       initialRoute: AppRoutes.splash,
       getPages: AppPages.pages,
       defaultTransition: Transition.fadeIn,

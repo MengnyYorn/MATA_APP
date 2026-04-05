@@ -6,7 +6,9 @@ import '../../../data/repositories/auth_repository.dart';
 class LoginBinding extends Bindings {
   @override
   void dependencies() {
-    Get.lazyPut(() => AuthRepository());
+    if (!Get.isRegistered<AuthRepository>()) {
+      Get.lazyPut(() => AuthRepository());
+    }
     Get.lazyPut(() => LoginController());
   }
 }

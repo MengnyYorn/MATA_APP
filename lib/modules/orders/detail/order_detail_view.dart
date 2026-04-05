@@ -5,6 +5,7 @@ import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_text_styles.dart';
 import '../../../core/widgets/status_badge.dart';
 import '../../../data/models/order_model.dart';
+import '../../../routes/app_routes.dart';
 import 'order_detail_controller.dart';
 
 class OrderDetailView extends GetView<OrderDetailController> {
@@ -17,7 +18,9 @@ class OrderDetailView extends GetView<OrderDetailController> {
         title: const Text('Order Detail'),
         leading: IconButton(
           icon: const Icon(Icons.arrow_back_ios_rounded, size: 20),
-          onPressed: Get.back,
+          // Use an explicit route so back works even when the navigation
+          // stack is lost (e.g. after a refresh / deep-link).
+          onPressed: () => Get.offNamed(AppRoutes.orders),
         ),
       ),
       body: Obx(() {

@@ -9,7 +9,9 @@ import '../cart/cart_controller.dart';
 class HomeBinding extends Bindings {
   @override
   void dependencies() {
-    Get.lazyPut(() => AuthRepository());
+    if (!Get.isRegistered<AuthRepository>()) {
+      Get.lazyPut(() => AuthRepository());
+    }
     Get.lazyPut(() => ProductRepository());
     Get.lazyPut(() => WishlistRepository());
     Get.put(CartController(), permanent: true);

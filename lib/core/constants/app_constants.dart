@@ -9,7 +9,7 @@ class AppConstants {
   static const String appVersion = '1.0.0';
 
   // API
-  static const String baseUrl = 'http://localhost:8087/api/v1';
+  static const String baseUrl = 'http://172.20.10.9:8087/api/v1';
   static const Duration connectTimeout = Duration(seconds: 30);
   static const Duration receiveTimeout = Duration(seconds: 30);
 
