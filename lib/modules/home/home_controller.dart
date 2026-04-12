@@ -1,5 +1,6 @@
 // lib/modules/home/home_controller.dart
 import 'package:get/get.dart';
+import '../../core/utils/app_snackbar.dart';
 import '../../data/models/product_model.dart';
 import '../../data/repositories/auth_repository.dart';
 import '../../data/repositories/product_repository.dart';
@@ -25,7 +26,7 @@ class HomeController extends GetxController {
       category: selectedCat.value == 'All' ? null : selectedCat.value,
     );
     result.fold(
-      (f) => Get.snackbar('Error', f.message),
+      (f) => AppSnackbar.error('Error', f.message),
       (data) => products.value = data,
     );
     isLoading.value = false;

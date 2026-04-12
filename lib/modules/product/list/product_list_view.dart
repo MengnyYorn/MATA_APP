@@ -1,6 +1,7 @@
 // lib/modules/product/list/product_list_view.dart
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import '../../../core/utils/app_snackbar.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_text_styles.dart';
 import '../../../core/widgets/product_card.dart';
@@ -125,13 +126,11 @@ class ProductListView extends GetView<ProductListController> {
                     final wishlist = Get.find<WishlistRepository>();
                     final added =
                         await wishlist.toggle(controller.products[i].id);
-                    Get.snackbar(
+                    AppSnackbar.success(
                       'Wishlist',
                       added
                           ? 'Added to your wishlist.'
                           : 'Removed from your wishlist.',
-                      snackPosition: SnackPosition.BOTTOM,
-                      margin: const EdgeInsets.all(16),
                     );
                   },
                 ),

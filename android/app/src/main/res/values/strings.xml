@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Web OAuth client ID — same as Spring GOOGLE_CLIENT_ID / Flutter AppConstants.googleServerClientId -->
+    <string name="default_web_client_id">531021898835-0b3ssb67tvilmst0j9f8j9vgs53trfqv.apps.googleusercontent.com</string>
+</resources>

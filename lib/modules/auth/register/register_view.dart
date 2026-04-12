@@ -1,6 +1,7 @@
 // lib/modules/auth/register/register_view.dart
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import '../../../routes/app_routes.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_text_styles.dart';
 import '../../../core/widgets/app_button.dart';
@@ -16,7 +17,7 @@ class RegisterView extends GetView<RegisterController> {
       appBar: AppBar(
         leading: IconButton(
           icon: const Icon(Icons.arrow_back_ios_rounded, size: 20),
-          onPressed: Get.back,
+          onPressed: popOrGoHome,
         ),
       ),
       body: SafeArea(
@@ -30,7 +31,7 @@ class RegisterView extends GetView<RegisterController> {
                 const SizedBox(height: 12),
                 Text('Create account', style: AppTextStyles.headline1),
                 const SizedBox(height: 6),
-                Text('Join MATA Boutique today',
+                Text('Join MATA Shop today',
                     style: AppTextStyles.bodyMedium
                         .copyWith(color: AppColors.textSecondary)),
                 const SizedBox(height: 36),
@@ -79,8 +80,7 @@ class RegisterView extends GetView<RegisterController> {
                   controller: controller.confirmCtrl,
                   isPassword: true,
                   prefixIcon: Icons.lock_outline_rounded,
-                  textInputAction: TextInputAction.done,
-                  onEditingComplete: controller.register,
+                  textInputAction: TextInputAction.next,
                   validator: (v) {
                     if (v != controller.passCtrl.text) {
                       return 'Passwords do not match';
@@ -88,13 +88,86 @@ class RegisterView extends GetView<RegisterController> {
                     return null;
                   },
                 ),
-                const SizedBox(height: 32),
+                const SizedBox(height: 20),
+
+                Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Expanded(
+                      child: AppTextField(
+                        label: 'Verification code',
+                        hint: '6-digit code from email',
+                        controller: controller.otpCtrl,
+                        keyboardType: TextInputType.number,
+                        prefixIcon: Icons.sms_outlined,
+                        textInputAction: TextInputAction.done,
+                        onEditingComplete: controller.register,
+                        validator: (v) {
+                          if (v == null || v.isEmpty) {
+                            return 'Enter the code from your email';
+                          }
+                          if (v.trim().length < 4) return 'Invalid code';
+                          return null;
+                        },
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    Padding(
+                      padding: const EdgeInsets.only(top: 28),
+                      child: Obx(() => OutlinedButton(
+                            style: OutlinedButton.styleFrom(
+                              minimumSize: const Size(108, 44),
+                              padding: const EdgeInsets.symmetric(
+                                  horizontal: 12, vertical: 10),
+                            ),
+                            onPressed: controller.isSendingOtp.value
+                                ? null
+                                : controller.sendVerificationCode,
+                            child: controller.isSendingOtp.value
+                                ? const SizedBox(
+                                    width: 20,
+                                    height: 20,
+                                    child: CircularProgressIndicator(strokeWidth: 2),
+                                  )
+                                : const Text('Send code'),
+                          )),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  'Tap Send code after entering name and email. Then enter the OTP and create your account.',
+                  style: AppTextStyles.bodySmall
+                      .copyWith(color: AppColors.textSecondary),
+                ),
+                const SizedBox(height: 24),
 
                 Obx(() => AppButton(
                   label: 'CREATE ACCOUNT',
                   onPressed: controller.register,
                   isLoading: controller.isLoading.value,
                 )),
+                const SizedBox(height: 16),
+
+                Obx(() => SizedBox(
+                      width: double.infinity,
+                      child: OutlinedButton.icon(
+                        style: OutlinedButton.styleFrom(
+                          minimumSize: const Size.fromHeight(52),
+                        ),
+                        onPressed: controller.isGoogleLoading.value
+                            ? null
+                            : controller.signInWithGoogle,
+                        icon: controller.isGoogleLoading.value
+                            ? const SizedBox(
+                                width: 18,
+                                height: 18,
+                                child: CircularProgressIndicator(strokeWidth: 2),
+                              )
+                            : const Icon(Icons.login_rounded, size: 22),
+                        label: const Text('Continue with Google'),
+                      ),
+                    )),
                 const SizedBox(height: 24),
 
                 Row(

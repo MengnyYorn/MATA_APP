@@ -28,7 +28,7 @@ class SplashView extends GetView<SplashController> {
             ),
             const SizedBox(height: 4),
             Text(
-              'BOUTIQUE',
+              'SHOP',
               style: AppTextStyles.labelSmall.copyWith(
                 color: Colors.white54,
                 letterSpacing: 8,

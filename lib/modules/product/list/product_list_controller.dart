@@ -1,6 +1,8 @@
 // lib/modules/product/list/product_list_controller.dart
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+
+import '../../../core/utils/app_snackbar.dart';
 import '../../../data/models/product_model.dart';
 import '../../../data/repositories/product_repository.dart';
 import '../../../routes/app_routes.dart';
@@ -31,7 +33,7 @@ class ProductListController extends GetxController {
     isLoading.value = true;
     final result = await _repo.getProducts(search: searchQuery.value);
     result.fold(
-      (f) => Get.snackbar('Error', f.message),
+      (f) => AppSnackbar.error('Error', f.message),
       (data) => products.value = data,
     );
     isLoading.value = false;

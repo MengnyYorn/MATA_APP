@@ -1,5 +1,5 @@
 name: mata_app
-description: MATA Boutique - Flutter E-Commerce App
+description: MATA Shop - Flutter E-Commerce App
 publish_to: 'none'
 version: 1.0.0+1
 
@@ -15,6 +15,7 @@ dependencies:
 
   # Network
   dio: ^5.4.0
+  google_sign_in: ^6.2.2
 
   # Local Storage
   get_storage: ^2.1.1

@@ -1,6 +1,7 @@
 // lib/modules/auth/login/login_view.dart
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import '../../../routes/app_routes.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_text_styles.dart';
 import '../../../core/widgets/app_button.dart';
@@ -21,7 +22,15 @@ class LoginView extends GetView<LoginController> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const SizedBox(height: 60),
+                Align(
+                  alignment: Alignment.centerLeft,
+                  child: IconButton(
+                    icon: const Icon(Icons.arrow_back_ios_new_rounded, size: 20),
+                    onPressed: popOrGoHome,
+                    tooltip: 'Back',
+                  ),
+                ),
+                const SizedBox(height: 16),
 
                 // Logo
                 Center(
@@ -29,7 +38,7 @@ class LoginView extends GetView<LoginController> {
                     children: [
                       Text('MATA',
                           style: AppTextStyles.display.copyWith(letterSpacing: 8)),
-                      Text('BOUTIQUE',
+                      Text('SHOP',
                           style: AppTextStyles.labelSmall.copyWith(letterSpacing: 6)),
                     ],
                   ),
@@ -93,6 +102,27 @@ class LoginView extends GetView<LoginController> {
                   onPressed: controller.login,
                   isLoading: controller.isLoading.value,
                 )),
+                const SizedBox(height: 16),
+
+                Obx(() => SizedBox(
+                      width: double.infinity,
+                      child: OutlinedButton.icon(
+                        style: OutlinedButton.styleFrom(
+                          minimumSize: const Size.fromHeight(52),
+                        ),
+                        onPressed: controller.isGoogleLoading.value
+                            ? null
+                            : controller.signInWithGoogle,
+                        icon: controller.isGoogleLoading.value
+                            ? const SizedBox(
+                                width: 18,
+                                height: 18,
+                                child: CircularProgressIndicator(strokeWidth: 2),
+                              )
+                            : const Icon(Icons.login_rounded, size: 22),
+                        label: const Text('Continue with Google'),
+                      ),
+                    )),
                 const SizedBox(height: 24),
 
                 // Register link

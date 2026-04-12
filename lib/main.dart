@@ -36,7 +36,7 @@ class MataApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return GetMaterialApp(
-      title: 'MATA Boutique',
+      title: 'MATA Shop',
       debugShowCheckedModeBanner: false,
       theme: AppTheme.light,
       initialBinding: BindingsBuilder(

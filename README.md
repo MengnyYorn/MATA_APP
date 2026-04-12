@@ -1,7 +1,7 @@
-## MATA Boutique – Flutter E‑Commerce App
+## MATA Shop – Flutter E‑Commerce App
 
-MATA Boutique is a modern e‑commerce mobile application built with Flutter.  
-It showcases a boutique-style shopping experience with a focus on clean UI, smooth navigation, and a modular architecture powered by GetX.
+MATA Shop is a modern e‑commerce mobile application built with Flutter.  
+It showcases a clean shopping experience with a focus on UI, smooth navigation, and a modular architecture powered by GetX.
 
 ---
 
@@ -149,7 +149,7 @@ Refer to the official Flutter documentation for signing and publishing:
 
 ### Environment & Configuration
 
-This project is currently configured as a demo boutique app.  
+This project is currently configured as a demo shopping app.  
 If you want to connect to a real backend:
 
 - **1. Decide your API backend** (REST, GraphQL, etc.).

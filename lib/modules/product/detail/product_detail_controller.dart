@@ -1,6 +1,7 @@
 // lib/modules/product/detail/product_detail_controller.dart
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import '../../../core/utils/app_snackbar.dart';
 import '../../../data/models/product_model.dart';
 import '../../../data/repositories/auth_repository.dart';
 import '../../../data/repositories/product_repository.dart';
@@ -27,7 +28,10 @@ class ProductDetailController extends GetxController {
     isLoading.value = true;
     final result = await _repo.getProductById(id);
     result.fold(
-      (f) { Get.back(); Get.snackbar('Error', f.message); },
+      (f) {
+        Get.back();
+        AppSnackbar.error('Error', f.message);
+      },
       (p) {
         product.value = p;
         if (p.sizes.isNotEmpty)  selectedSize.value  = p.sizes.first;
@@ -49,9 +53,8 @@ class ProductDetailController extends GetxController {
     if (p == null) return;
 
     if (selectedSize.value.isEmpty || selectedColor.value.isEmpty) {
-      Get.snackbar('Select options', 'Please select size and color',
-          snackPosition: SnackPosition.BOTTOM,
-          margin: const EdgeInsets.all(16));
+      AppSnackbar.warning(
+          'Select options', 'Please select size and color');
       return;
     }
 
@@ -69,11 +72,9 @@ class ProductDetailController extends GetxController {
       qty: quantity.value,
     );
 
-    Get.snackbar(
+    AppSnackbar.success(
       'Added to cart ✓',
       '${p.name} — ${selectedSize.value} / ${selectedColor.value}',
-      snackPosition: SnackPosition.BOTTOM,
-      margin: const EdgeInsets.all(16),
       duration: const Duration(seconds: 2),
     );
   }

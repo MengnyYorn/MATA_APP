@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:shimmer/shimmer.dart';
+import '../../core/utils/app_snackbar.dart';
 import '../../core/constants/app_constants.dart';
 import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_text_styles.dart';
@@ -84,32 +85,57 @@ class HomeView extends GetView<HomeController> {
               ),
               PopupMenuButton(
                 icon: const Icon(Icons.more_vert_rounded),
-                itemBuilder: (_) => [
-                  PopupMenuItem(
-                    onTap: controller.goToProfile,
-                    child: const Row(children: [
-                      Icon(Icons.person_outline_rounded, size: 20),
-                      SizedBox(width: 12),
-                      Text('Profile'),
-                    ]),
-                  ),
-                  PopupMenuItem(
-                    onTap: controller.goToOrders,
-                    child: const Row(children: [
-                      Icon(Icons.receipt_long_outlined, size: 20),
-                      SizedBox(width: 12),
-                      Text('My Orders'),
-                    ]),
-                  ),
-                  PopupMenuItem(
-                    onTap: controller.logout,
-                    child: const Row(children: [
-                      Icon(Icons.logout_rounded, size: 20, color: AppColors.error),
-                      SizedBox(width: 12),
-                      Text('Logout', style: TextStyle(color: AppColors.error)),
-                    ]),
-                  ),
-                ],
+                itemBuilder: (context) {
+                  final auth = Get.find<AuthRepository>();
+                  final loggedIn = auth.isLoggedIn;
+                  return [
+                    PopupMenuItem(
+                      onTap: () =>
+                          Future.microtask(controller.goToProfile),
+                      child: const Row(children: [
+                        Icon(Icons.person_outline_rounded, size: 20),
+                        SizedBox(width: 12),
+                        Text('Profile'),
+                      ]),
+                    ),
+                    PopupMenuItem(
+                      onTap: () =>
+                          Future.microtask(controller.goToOrders),
+                      child: const Row(children: [
+                        Icon(Icons.receipt_long_outlined, size: 20),
+                        SizedBox(width: 12),
+                        Text('My Orders'),
+                      ]),
+                    ),
+                    if (loggedIn)
+                      PopupMenuItem(
+                        onTap: () =>
+                            Future.microtask(controller.logout),
+                        child: const Row(children: [
+                          Icon(Icons.logout_rounded,
+                              size: 20, color: AppColors.error),
+                          SizedBox(width: 12),
+                          Text('Logout',
+                              style: TextStyle(color: AppColors.error)),
+                        ]),
+                      )
+                    else
+                      PopupMenuItem(
+                        onTap: () => Future.microtask(
+                          () => Get.toNamed(AppRoutes.login),
+                        ),
+                        child: const Row(children: [
+                          Icon(Icons.login_rounded,
+                              size: 20, color: AppColors.primary),
+                          SizedBox(width: 12),
+                          Text('Sign in',
+                              style: TextStyle(
+                                  color: AppColors.primary,
+                                  fontWeight: FontWeight.w600)),
+                        ]),
+                      ),
+                  ];
+                },
               ),
               const SizedBox(width: 8),
             ],
@@ -202,13 +228,11 @@ class HomeView extends GetView<HomeController> {
                       final wishlist = Get.find<WishlistRepository>();
                       final added =
                           await wishlist.toggle(controller.products[i].id);
-                      Get.snackbar(
+                      AppSnackbar.success(
                         'Wishlist',
                         added
                             ? 'Added to your wishlist.'
                             : 'Removed from your wishlist.',
-                        snackPosition: SnackPosition.BOTTOM,
-                        margin: const EdgeInsets.all(16),
                       );
                     },
                   ),

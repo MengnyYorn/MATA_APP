@@ -42,11 +42,13 @@ class AppTheme {
         textStyle: AppTextStyles.button,
       ),
     ),
+    // Do not use infinite min width — OutlinedButtons inside Row/Center will fail layout (white screen).
     outlinedButtonTheme: OutlinedButtonThemeData(
       style: OutlinedButton.styleFrom(
         foregroundColor: AppColors.primary,
         side: const BorderSide(color: AppColors.border, width: 1.5),
-        minimumSize: const Size(double.infinity, 54),
+        minimumSize: const Size(0, 48),
+        tapTargetSize: MaterialTapTargetSize.shrinkWrap,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
         textStyle: AppTextStyles.button,
       ),
