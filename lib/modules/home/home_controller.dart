@@ -1,5 +1,6 @@
 // lib/modules/home/home_controller.dart
 import 'package:get/get.dart';
+import '../../core/constants/app_constants.dart';
 import '../../core/utils/app_snackbar.dart';
 import '../../data/models/product_model.dart';
 import '../../data/repositories/auth_repository.dart';
@@ -13,11 +14,39 @@ class HomeController extends GetxController {
   final products     = <ProductModel>[].obs;
   final isLoading    = true.obs;
   final selectedCat  = 'All'.obs;
+  /// Chips: always starts with `All`, then API category names (see [loadCategories]).
+  final categories   = <String>['All'].obs;
 
   @override
   void onInit() {
     super.onInit();
-    loadProducts();
+    Future.wait([loadCategories(), loadProducts()]);
+  }
+
+  Future<void> loadCategories() async {
+    final result = await _productRepo.getCategories();
+    result.fold(
+      (f) {
+        categories.value = ['All', ...AppConstants.fallbackCategoryNames];
+        AppSnackbar.error('Categories', f.message);
+      },
+      (names) {
+        if (names.isEmpty) {
+          categories.value = ['All', ...AppConstants.fallbackCategoryNames];
+        } else {
+          categories.value = ['All', ...names];
+        }
+        final sel = selectedCat.value;
+        if (sel != 'All' && !categories.contains(sel)) {
+          selectedCat.value = 'All';
+        }
+      },
+    );
+  }
+
+  Future<void> refreshHome() async {
+    await loadCategories();
+    await loadProducts();
   }
 
   Future<void> loadProducts() async {

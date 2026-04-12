@@ -39,40 +39,54 @@ class OrderRepository {
     }
   }
 
+  static Failure _dioFailure(DioException e, {String? fallback}) {
+    final d = e.response?.data;
+    if (d is Map && d['message'] is String) {
+      return Failure(d['message'] as String);
+    }
+    return Failure(fallback ?? e.message ?? 'Request failed');
+  }
+
   Future<Either<Failure, List<OrderModel>>> getMyOrders() async {
     final auth = _authSafe;
     if (auth == null || !auth.isLoggedIn) {
       return const Left(Failure('Please sign in to view your orders.'));
     }
 
-    try {
-      final res = await _dio.get(
-        '/orders/my',
-        options: Options(
-          headers: {'Authorization': 'Bearer ${auth.accessToken}'},
-        ),
-      );
-      final body = res.data;
-      final data = (body is Map<String, dynamic>) ? body['data'] : null;
-      if (data is! List) {
-        return const Left(Failure('Invalid orders response'));
+    for (var attempt = 0; attempt < 2; attempt++) {
+      try {
+        final res = await _dio.get(
+          '/orders/my',
+          options: Options(
+            headers: {'Authorization': 'Bearer ${auth.accessToken}'},
+          ),
+        );
+        final body = res.data;
+        final data = (body is Map<String, dynamic>) ? body['data'] : null;
+        if (data is! List) {
+          return const Left(Failure('Invalid orders response'));
+        }
+
+        final orders = data
+            .whereType<Map>()
+            .map((e) => OrderModel.fromJson(Map<String, dynamic>.from(e)))
+            .toList();
+
+        return Right(orders);
+      } on DioException catch (e) {
+        final code = e.response?.statusCode;
+        if (attempt == 0 && (code == 401 || code == 403)) {
+          if (await auth.tryRefreshAccessToken()) continue;
+          return const Left(
+            Failure('Session expired. Please sign in again.'),
+          );
+        }
+        return Left(_dioFailure(e, fallback: 'Unable to load orders'));
+      } catch (e) {
+        return Left(Failure(e.toString()));
       }
-
-      final orders = data
-          .whereType<Map>()
-          .map((e) => OrderModel.fromJson(Map<String, dynamic>.from(e)))
-          .toList();
-
-      return Right(orders);
-    } on DioException catch (e) {
-      final msg =
-          e.response?.data is Map && (e.response!.data['message'] is String)
-              ? e.response!.data['message'] as String
-              : e.message ?? 'Unable to load orders';
-      return Left(Failure(msg));
-    } catch (e) {
-      return Left(Failure(e.toString()));
     }
+    return const Left(Failure('Unable to load orders'));
   }
 
   Future<Either<Failure, OrderModel>> getOrderById(String id) async {
@@ -81,36 +95,42 @@ class OrderRepository {
       return const Left(Failure('Please sign in to view this order.'));
     }
 
-    try {
-      final res = await _dio.get(
-        '/orders/$id',
-        options: Options(
-          headers: {'Authorization': 'Bearer ${auth.accessToken}'},
-        ),
-      );
-      final body = res.data;
-      final data = (body is Map<String, dynamic>) ? body['data'] : null;
-      if (data is! Map) {
-        return const Left(Failure('Invalid order response'));
+    for (var attempt = 0; attempt < 2; attempt++) {
+      try {
+        final res = await _dio.get(
+          '/orders/$id',
+          options: Options(
+            headers: {'Authorization': 'Bearer ${auth.accessToken}'},
+          ),
+        );
+        final body = res.data;
+        final data = (body is Map<String, dynamic>) ? body['data'] : null;
+        if (data is! Map) {
+          return const Left(Failure('Invalid order response'));
+        }
+        return Right(OrderModel.fromJson(Map<String, dynamic>.from(data)));
+      } on DioException catch (e) {
+        final status = e.response?.statusCode;
+        if (status == 404) {
+          return const Left(Failure('Order not found'));
+        }
+        if (attempt == 0 && (status == 401 || status == 403)) {
+          if (await auth.tryRefreshAccessToken()) continue;
+          return const Left(
+            Failure('Session expired. Please sign in again.'),
+          );
+        }
+        return Left(_dioFailure(e, fallback: 'Unable to load order'));
+      } catch (e) {
+        return Left(Failure(e.toString()));
       }
-      return Right(OrderModel.fromJson(Map<String, dynamic>.from(data)));
-    } on DioException catch (e) {
-      final status = e.response?.statusCode;
-      if (status == 404) {
-        return const Left(Failure('Order not found'));
-      }
-      final msg =
-          e.response?.data is Map && (e.response!.data['message'] is String)
-              ? e.response!.data['message'] as String
-              : e.message ?? 'Unable to load order';
-      return Left(Failure(msg));
-    } catch (e) {
-      return Left(Failure(e.toString()));
     }
+    return const Left(Failure('Unable to load order'));
   }
 
   Future<Either<Failure, OrderModel>> placeOrder(
-      List<CartItemModel> items) async {
+    List<CartItemModel> items,
+  ) async {
     final auth = _authSafe;
     if (auth == null || !auth.isLoggedIn) {
       return const Left(Failure('Please sign in to place an order.'));
@@ -120,38 +140,46 @@ class OrderRepository {
     }
 
     final payloadItems = items
-        .map((i) => {
-              'productId': int.tryParse(i.product.id) ?? 0,
-              'productName': i.product.name,
-              'price': i.product.price,
-              'quantity': i.quantity,
-              'selectedSize': i.selectedSize,
-              'selectedColor': i.selectedColor,
-            })
+        .map(
+          (i) => {
+            'productId': int.tryParse(i.product.id) ?? 0,
+            'productName': i.product.name,
+            'price': i.product.price,
+            'quantity': i.quantity,
+            'selectedSize': i.selectedSize,
+            'selectedColor': i.selectedColor,
+          },
+        )
         .toList();
 
-    try {
-      final res = await _dio.post(
-        '/orders',
-        data: {'items': payloadItems},
-        options: Options(
-          headers: {'Authorization': 'Bearer ${auth.accessToken}'},
-        ),
-      );
-      final body = res.data;
-      final data = (body is Map<String, dynamic>) ? body['data'] : null;
-      if (data is! Map) {
-        return const Left(Failure('Invalid place-order response'));
+    for (var attempt = 0; attempt < 2; attempt++) {
+      try {
+        final res = await _dio.post(
+          '/orders',
+          data: {'items': payloadItems},
+          options: Options(
+            headers: {'Authorization': 'Bearer ${auth.accessToken}'},
+          ),
+        );
+        final body = res.data;
+        final data = (body is Map<String, dynamic>) ? body['data'] : null;
+        if (data is! Map) {
+          return const Left(Failure('Invalid place-order response'));
+        }
+        return Right(OrderModel.fromJson(Map<String, dynamic>.from(data)));
+      } on DioException catch (e) {
+        final code = e.response?.statusCode;
+        if (attempt == 0 && (code == 401 || code == 403)) {
+          if (await auth.tryRefreshAccessToken()) continue;
+          return const Left(
+            Failure('Session expired. Please sign in again.'),
+          );
+        }
+        return Left(_dioFailure(e, fallback: 'Unable to place order'));
+      } catch (e) {
+        return Left(Failure(e.toString()));
       }
-      return Right(OrderModel.fromJson(Map<String, dynamic>.from(data)));
-    } on DioException catch (e) {
-      final msg =
-          e.response?.data is Map && (e.response!.data['message'] is String)
-              ? e.response!.data['message'] as String
-              : e.message ?? 'Unable to place order';
-      return Left(Failure(msg));
-    } catch (e) {
-      return Left(Failure(e.toString()));
     }
+    return const Left(Failure('Unable to place order'));
   }
 }

@@ -371,6 +371,38 @@ class AuthRepository {
 
   String? get accessToken => _box.read<String>(AppConstants.keyAccessToken);
 
+  String? get refreshToken => _box.read<String>(AppConstants.keyRefreshToken);
+
+  /// Uses [refreshToken] to obtain a new access token. Returns false if refresh fails.
+  Future<bool> tryRefreshAccessToken() async {
+    final rt = refreshToken;
+    if (rt == null || rt.isEmpty) return false;
+    try {
+      final res = await _dio.post(
+        '/auth/refresh',
+        data: {'refreshToken': rt},
+      );
+      final body = res.data;
+      final data = (body is Map<String, dynamic>) ? body['data'] : null;
+      if (data is! Map) return false;
+      final newAccess = data['accessToken'] as String?;
+      final newRefresh = data['refreshToken'] as String?;
+      if (newAccess == null) return false;
+      await _box.write(AppConstants.keyAccessToken, newAccess);
+      if (newRefresh != null) {
+        await _box.write(AppConstants.keyRefreshToken, newRefresh);
+      }
+      final userJson = data['user'] as Map<String, dynamic>?;
+      if (userJson != null) {
+        await _box.write(AppConstants.keyUser, userJson);
+      }
+      _notifyAuthSessionChanged();
+      return true;
+    } catch (_) {
+      return false;
+    }
+  }
+
   UserModel? get currentUser {
     final json = _box.read(AppConstants.keyUser);
     if (json == null) return null;

@@ -1,3 +1,7 @@
+# Local env overrides (example template: .env.example)
+.env
+!.env.example
+
 # Miscellaneous
 *.class
 *.log

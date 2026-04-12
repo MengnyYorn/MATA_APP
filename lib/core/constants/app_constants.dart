@@ -35,9 +35,8 @@ class AppConstants {
   // Cart
   static const int maxCartQuantity = 99;
 
-  // Categories
-  static const List<String> categories = [
-    'All',
+  /// Used only if GET /categories fails (offline / error). Home loads live categories from the API.
+  static const List<String> fallbackCategoryNames = [
     'Dresses',
     'Knitwear',
     'Tops',

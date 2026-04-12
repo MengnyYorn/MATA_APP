@@ -1,86 +1,53 @@
-## MATA Shop – Flutter E‑Commerce App
+# MATA Shop — Flutter app (`MATA_APP`)
 
-MATA Shop is a modern e‑commerce mobile application built with Flutter.  
-It showcases a clean shopping experience with a focus on UI, smooth navigation, and a modular architecture powered by GetX.
+Customer-facing **mobile** app for the MATA Shop e-commerce platform. It talks to the **MATA-API** Spring Boot backend over REST (products, categories, auth, cart flow, orders, wishlist).
 
----
+**Related repositories**
 
-### Features
-
-- **Product catalog**
-  - Browse a list of products with images, prices, and descriptions.
-  - Optimized image loading with caching and shimmer placeholders.
-
-- **Home & discovery**
-  - Curated home screen for featured and recommended items.
-  - Category-based navigation (implementation may evolve).
-
-- **Wishlist & persistence**
-  - Add/remove products from a wishlist.
-  - Local persistence using `get_storage` so favorites survive app restarts.
-
-- **Profile & UX**
-  - Basic profile screen and app info.
-  - Consistent theming via a central `AppTheme`.
-
-- **Navigation & state**
-  - GetX-based navigation and state management.
-  - Route configuration via `AppRoutes` / `AppPages`.
+| Project | Role |
+|--------|------|
+| [MATA-API](../MATA-API) | REST API, JWT auth, PostgreSQL |
+| [MATA-ADMIN-UI](../MATA-ADMIN-UI) | Admin dashboard (web) |
+| [MATA_UI](../MATA_UI) | Planned public **web** storefront (browser); not implemented in this workspace yet |
 
 ---
 
-### Tech Stack
+## Features
 
-- **Framework**: Flutter
-- **Language**: Dart
-- **State management & navigation**: `get`
-- **Networking**: `dio`
-- **Local storage**: `get_storage`
-- **UI helpers**:
-  - `cached_network_image`
-  - `shimmer`
-  - `flutter_svg`
-  - `lottie`
-- **Utilities**:
-  - `intl`
-  - `equatable`
-  - `dartz`
-
-See `pubspec.yaml` for the full list of dependencies and versions.
+- **Browse & search** — Product grid, category chips loaded from `GET /api/v1/categories`, search/filter by category.
+- **Product detail** — Images, sizes/colors, add to cart.
+- **Cart & checkout** — Local cart; place order when signed in (`POST /api/v1/orders`).
+- **Authentication**
+  - Email + password login and registration (with email OTP where configured).
+  - **Sign in with Google** (ID token verified by the API).
+- **Account** — Profile screen; JWT access token with **refresh** on `401`/`403` for orders APIs.
+- **Orders** — “My orders” (`GET /api/v1/orders/my`), order detail; session refresh via `POST /api/v1/auth/refresh` when the access token expires.
+- **Wishlist** — Persisted locally (`get_storage`).
+- **UI** — Theming, shimmer loading, cached images, Lottie where used.
 
 ---
 
-### Project Structure (High Level)
+## Tech stack
 
-The structure may evolve, but at a high level:
+| Area | Packages |
+|------|----------|
+| Framework | Flutter |
+| State / navigation | `get` (GetX) |
+| HTTP | `dio` |
+| Storage | `get_storage` |
+| Google Sign-In | `google_sign_in` |
+| UI | `cached_network_image`, `shimmer`, `flutter_svg`, `lottie` |
+| Utilities | `intl`, `equatable`, `dartz` |
 
-- **`lib/main.dart`** – App entry point, initializes storage, orientation, and launches `MataApp`.
-- **`lib/core/`**
-  - `theme/` – `AppTheme` and general styling.
-  - `constants/` – Shared constants (e.g., app-wide values).
-  - `widgets/` – Reusable UI components such as product cards.
-- **`lib/modules/`**
-  - `home/` – Home screen, bindings, and controllers.
-  - `product/` – Product list and detail related screens and logic.
-  - `profile/` – Profile-related screens.
-- **`lib/routes/`**
-  - `app_routes.dart` – Route name definitions.
-  - `app_pages.dart` – GetX `GetPage` configuration.
-- **`assets/`**
-  - `images/` – Product and UI images.
-  - `icons/` – SVG icons (including the MATA and Store icons).
-  - `animations/` – Lottie animations.
-  - `fonts/` – Optional custom fonts (see commented section in `pubspec.yaml`).
+See `pubspec.yaml` for versions.
 
 ---
 
-### Prerequisites
+## Prerequisites
 
-- **Flutter SDK**: `>=3.0.0 <4.0.0`
-- **Dart**: Comes with Flutter SDK
-- A recent version of **Android Studio**, **Visual Studio Code**, or another IDE with Flutter support.
-
-Confirm your setup:
+- **Flutter SDK** (Dart `>=3.0.0 <4.0.0`)
+- **MATA-API** running and reachable from the device or emulator (see [Network](#network-and-api-base-url))
+- Android Studio / Xcode / VS Code with Flutter extensions
 
 ```bash
 flutter --version
@@ -89,126 +56,101 @@ flutter doctor
 
 ---
 
-### Getting Started (Local Development)
+## Configuration
 
-- **1. Clone the repository**
+### API base URL
 
-```bash
-git clone <your-repo-url>
-cd mata_app
+Set the backend base in **`lib/core/constants/app_constants.dart`**:
+
+```dart
+static const String baseUrl = 'http://<host>:8087/api/v1';
 ```
 
-- **2. Install dependencies**
+- **Physical device:** use your PC’s LAN IP (e.g. `192.168.x.x`), not `localhost`.
+- **Android emulator:** the project maps `localhost` → `10.0.2.2` in Dio base URL resolution so `http://localhost:8087/api/v1` can work for the emulator only when you use `localhost` in that constant.
+
+### Google Sign-In
+
+The **Web client ID** (server audience for the ID token) must match the API’s `GOOGLE_CLIENT_ID`. Override at build time if needed:
 
 ```bash
-flutter pub get
+flutter run --dart-define=GOOGLE_SERVER_CLIENT_ID=your-id.apps.googleusercontent.com
 ```
 
-- **3. (Optional) Configure fonts**
-
-If you add custom fonts under `assets/fonts/`, uncomment and adjust the `fonts` section in `pubspec.yaml`, then run:
-
-```bash
-flutter pub get
-```
-
-- **4. Run the app**
-
-```bash
-flutter run
-```
-
-Use your preferred device:
-
-- For Android: start an Android emulator or connect a physical device with USB debugging.
-- For iOS: start an iOS simulator or connect a physical device (on macOS).
+Configure the OAuth client in Google Cloud (Android package name + SHA-1 for debug/release).
 
 ---
 
-### Building Release APK / App Bundle
+## Getting started
 
-- **Android APK**
+```bash
+cd MATA_APP
+flutter pub get
+flutter run
+```
+
+Choose a device or emulator when prompted.
+
+### Checks
+
+```bash
+dart analyze
+flutter test
+```
+
+---
+
+## Project structure (overview)
+
+| Path | Purpose |
+|------|---------|
+| `lib/main.dart` | Entry: `GetStorage`, `GetMaterialApp`, global `AuthRepository` |
+| `lib/core/` | Theme, constants, utilities, shared widgets |
+| `lib/data/` | Models, repositories (`auth_repository`, `product_repository`, `order_repository`, wishlist, cart) |
+| `lib/modules/` | Feature screens: splash, auth, home, product list/detail, cart, checkout, orders, profile |
+| `lib/routes/` | `AppRoutes`, `AppPages`, bindings |
+
+---
+
+## Building releases
+
+**Android APK**
 
 ```bash
 flutter build apk --release
 ```
 
-- **Android App Bundle**
+**Android App Bundle**
 
 ```bash
 flutter build appbundle --release
 ```
 
-These commands generate builds under `build/app/`.
+Outputs under `build/app/`. Use your signing config for Play Store uploads.
 
-Refer to the official Flutter documentation for signing and publishing:
-- Android: `https://docs.flutter.dev/deployment/android`
-- iOS: `https://docs.flutter.dev/deployment/ios`
-
----
-
-### Environment & Configuration
-
-This project is currently configured as a demo shopping app.  
-If you want to connect to a real backend:
-
-- **1. Decide your API backend** (REST, GraphQL, etc.).
-- **2. Centralize API configuration** (e.g., base URLs, interceptors) in a core/network or data layer using `dio`.
-- **3. Create repositories & data sources**
-  - Keep network logic out of widgets and controllers.
-  - Use models and mappers to transform API responses.
-
-You can extend the existing repository pattern (for example, wishlist repository) for products, auth, and orders.
-
----
-
-### Testing
-
-Flutter’s built-in testing support is enabled via `flutter_test` and `flutter_lints`.
-
-- **Run tests**:
+**iOS** (on macOS)
 
 ```bash
-flutter test
-```
-
-You can add:
-
-- Unit tests for repositories and controllers.
-- Widget tests for key screens (home, product list, product card).
-
----
-
-### Coding Standards & Architecture
-
-- **Architecture**
-  - Modular structure (`modules` + `core`).
-  - GetX for navigation, controllers, and bindings.
-  - Separation of concerns between UI, state, and data.
-
-- **Style & Linting**
-  - Uses `flutter_lints` for recommended best practices.
-  - Run `dart analyze` to check for issues:
-
-```bash
-dart analyze
+flutter build ios --release
 ```
 
 ---
 
-### Contributing
+## Network and API base URL
 
-- **1. Fork the repository** and create a feature branch.
-- **2. Make your changes** following existing patterns and style.
-- **3. Run `flutter test` and `dart analyze`** to ensure everything passes.
-- **4. Open a Pull Request** with a clear description of:
-  - What you changed.
-  - How to test it.
+- The API is expected at **`/api/v1/...`** (see MATA-API README).
+- If products or orders fail to load, confirm the phone/emulator can reach `baseUrl` (firewall, same Wi‑Fi, correct IP).
+- Orders endpoints require a valid **Bearer** token; expired sessions trigger a **refresh** once, then a clear message if refresh fails.
 
 ---
 
-### License
+## Coding standards
 
-If this project is intended to be open source, add your license here (for example, MIT).  
-Otherwise, specify that the code is proprietary and not for unauthorized redistribution.
+- `flutter_lints` is enabled; run `dart analyze` before committing.
+- Keep API access in **repositories**, not in widgets.
 
+---
+
+## License
+
+Proprietary — MATA project unless you add an open-source license.

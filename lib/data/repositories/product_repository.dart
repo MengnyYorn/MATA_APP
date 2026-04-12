@@ -58,6 +58,41 @@ class ProductRepository {
     }
   }
 
+  /// Public endpoint: `GET /categories` — names sorted by `sortOrder`, then name.
+  Future<Either<Failure, List<String>>> getCategories() async {
+    try {
+      final res = await _dio.get('/categories');
+      final body = res.data;
+      final data = (body is Map<String, dynamic>) ? body['data'] : null;
+      if (data is! List) {
+        return Left(const Failure('Invalid categories response'));
+      }
+      final rows = data
+          .whereType<Map>()
+          .map((e) => Map<String, dynamic>.from(e))
+          .toList();
+      rows.sort((a, b) {
+        final sa = (a['sortOrder'] as num?)?.toInt() ?? 0;
+        final sb = (b['sortOrder'] as num?)?.toInt() ?? 0;
+        final c = sa.compareTo(sb);
+        if (c != 0) return c;
+        final na = a['name'] as String? ?? '';
+        final nb = b['name'] as String? ?? '';
+        return na.compareTo(nb);
+      });
+      final names = rows
+          .map((e) => e['name'] as String?)
+          .whereType<String>()
+          .where((n) => n.isNotEmpty)
+          .toList();
+      return Right(names);
+    } on DioException catch (e) {
+      return Left(Failure(e.message ?? 'Network error'));
+    } catch (e) {
+      return Left(Failure(e.toString()));
+    }
+  }
+
   Future<Either<Failure, ProductModel>> getProductById(String id) async {
     try {
       final res = await _dio.get('/products/$id');

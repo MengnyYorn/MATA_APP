@@ -4,7 +4,6 @@ import 'package:get/get.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:shimmer/shimmer.dart';
 import '../../core/utils/app_snackbar.dart';
-import '../../core/constants/app_constants.dart';
 import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_text_styles.dart';
 import '../../core/widgets/product_card.dart';
@@ -24,7 +23,7 @@ class HomeView extends GetView<HomeController> {
     return Scaffold(
       backgroundColor: AppColors.background,
       body: RefreshIndicator(
-        onRefresh: controller.loadProducts,
+        onRefresh: controller.refreshHome,
         child: CustomScrollView(
         physics: const AlwaysScrollableScrollPhysics(),
         slivers: [
@@ -335,16 +334,17 @@ class _HeroBanner extends StatelessWidget {
 class _CategoryRow extends GetView<HomeController> {
   @override
   Widget build(BuildContext context) {
-    return SizedBox(
-      height: 40,
-      child: ListView.separated(
-        scrollDirection: Axis.horizontal,
-        padding: const EdgeInsets.symmetric(horizontal: 16),
-        itemCount: AppConstants.categories.length,
-        separatorBuilder: (_, __) => const SizedBox(width: 8),
-        itemBuilder: (_, i) {
-          final cat = AppConstants.categories[i];
-          return Obx(() {
+    return Obx(() {
+      final cats = controller.categories;
+      return SizedBox(
+        height: 40,
+        child: ListView.separated(
+          scrollDirection: Axis.horizontal,
+          padding: const EdgeInsets.symmetric(horizontal: 16),
+          itemCount: cats.length,
+          separatorBuilder: (_, __) => const SizedBox(width: 8),
+          itemBuilder: (_, i) {
+            final cat = cats[i];
             final selected = controller.selectedCat.value == cat;
             return GestureDetector(
               onTap: () => controller.selectCategory(cat),
@@ -385,10 +385,10 @@ class _CategoryRow extends GetView<HomeController> {
                 ),
               ),
             );
-          });
-        },
-      ),
-    );
+          },
+        ),
+      );
+    });
   }
 }
 
