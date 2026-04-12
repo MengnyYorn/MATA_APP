@@ -5,6 +5,7 @@ import 'dart:io' show Platform;
 import 'package:dartz/dartz.dart';
 import 'package:dio/dio.dart';
 import 'package:flutter/services.dart';
+import 'package:get/get.dart';
 import 'package:get_storage/get_storage.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 
@@ -31,12 +32,25 @@ class AuthRepository {
   final Dio _dio;
   final _box = GetStorage();
 
+  /// Increment when tokens/user in storage change so widgets (e.g. home greeting) can [Obx] rebuild.
+  final RxInt sessionRevision = 0.obs;
+
+  void _notifyAuthSessionChanged() => sessionRevision.value++;
+
   /// Single instance so [logout] can [GoogleSignIn.signOut] and the next
   /// [signIn] shows the account picker instead of reusing the last account.
   final GoogleSignIn _googleSignIn = GoogleSignIn(
     scopes: const ['email', 'profile'],
     serverClientId: AppConstants.googleServerClientId,
   );
+
+  /// Clears the Google Sign-In session so the next attempt is not stuck in an
+  /// ambiguous state (e.g. after backend rejects the token).
+  Future<void> _clearGoogleSignInSession() async {
+    try {
+      await _googleSignIn.signOut();
+    } catch (_) {}
+  }
 
   static String _resolveBaseUrl(String baseUrl) {
     if (Platform.isAndroid && baseUrl.contains('localhost')) {
@@ -83,6 +97,80 @@ class AuthRepository {
         await _box.write(AppConstants.keyRefreshToken, refreshToken);
       }
       await _box.write(AppConstants.keyUser, user.toJson());
+      _notifyAuthSessionChanged();
+
+      return Right(user);
+    } on DioException catch (e) {
+      final msg =
+          e.response?.data is Map && (e.response!.data['message'] is String)
+              ? e.response!.data['message'] as String
+              : e.message ?? 'Unable to sign in';
+      return Left(Failure(msg));
+    } catch (e) {
+      return Left(Failure(e.toString()));
+    }
+  }
+
+  Future<Either<Failure, void>> sendLoginOtp({required String email}) async {
+    final trimmed = email.trim();
+    if (trimmed.isEmpty) {
+      return const Left(Failure('Email is required'));
+    }
+    try {
+      await _dio.post(
+        '/auth/login/send-otp',
+        data: {'email': trimmed},
+      );
+      return const Right(null);
+    } on DioException catch (e) {
+      final msg =
+          e.response?.data is Map && (e.response!.data['message'] is String)
+              ? e.response!.data['message'] as String
+              : e.message ?? 'Unable to send code';
+      return Left(Failure(msg));
+    } catch (e) {
+      return Left(Failure(e.toString()));
+    }
+  }
+
+  Future<Either<Failure, UserModel>> loginWithOtp({
+    required String email,
+    required String otp,
+  }) async {
+    if (email.trim().isEmpty || otp.trim().isEmpty) {
+      return const Left(Failure('Email and code are required'));
+    }
+    try {
+      final res = await _dio.post(
+        '/auth/login/otp',
+        data: {
+          'email': email.trim(),
+          'otp': otp.trim(),
+        },
+      );
+
+      final body = res.data;
+      final data = (body is Map<String, dynamic>) ? body['data'] : null;
+      if (data is! Map) {
+        return const Left(Failure('Invalid login response'));
+      }
+
+      final accessToken = data['accessToken'] as String?;
+      final refreshToken = data['refreshToken'] as String?;
+      final userJson = data['user'] as Map<String, dynamic>?;
+
+      if (accessToken == null || userJson == null) {
+        return const Left(Failure('Missing token or user data'));
+      }
+
+      final user = UserModel.fromJson(userJson);
+
+      await _box.write(AppConstants.keyAccessToken, accessToken);
+      if (refreshToken != null) {
+        await _box.write(AppConstants.keyRefreshToken, refreshToken);
+      }
+      await _box.write(AppConstants.keyUser, user.toJson());
+      _notifyAuthSessionChanged();
 
       return Right(user);
     } on DioException catch (e) {
@@ -165,6 +253,7 @@ class AuthRepository {
         await _box.write(AppConstants.keyRefreshToken, refreshToken);
       }
       await _box.write(AppConstants.keyUser, user.toJson());
+      _notifyAuthSessionChanged();
 
       return Right(user);
     } on DioException catch (e) {
@@ -182,11 +271,13 @@ class AuthRepository {
     try {
       final account = await _googleSignIn.signIn();
       if (account == null) {
+        await _clearGoogleSignInSession();
         return const Left(Failure('Sign in cancelled'));
       }
       final auth = await account.authentication;
       final idToken = auth.idToken;
       if (idToken == null || idToken.isEmpty) {
+        await _clearGoogleSignInSession();
         return const Left(Failure(
             'No Google ID token. Ensure Web client ID is set and the Android OAuth client (package + SHA-1) exists in Google Cloud.'));
       }
@@ -199,6 +290,7 @@ class AuthRepository {
       final body = res.data;
       final data = (body is Map<String, dynamic>) ? body['data'] : null;
       if (data is! Map) {
+        await _clearGoogleSignInSession();
         return const Left(Failure('Invalid Google auth response'));
       }
 
@@ -207,19 +299,35 @@ class AuthRepository {
       final userJson = data['user'] as Map<String, dynamic>?;
 
       if (accessToken == null || userJson == null) {
+        await _clearGoogleSignInSession();
         return const Left(Failure('Missing token or user data'));
       }
 
-      final user = UserModel.fromJson(userJson);
+      var user = UserModel.fromJson(userJson);
+      // Prefer Google profile photo if the API still stores initials only.
+      final photo = account.photoUrl;
+      if (photo != null &&
+          photo.isNotEmpty &&
+          !user.hasNetworkAvatar) {
+        user = UserModel(
+          id: user.id,
+          name: user.name,
+          email: user.email,
+          role: user.role,
+          avatar: photo,
+        );
+      }
 
       await _box.write(AppConstants.keyAccessToken, accessToken);
       if (refreshToken != null) {
         await _box.write(AppConstants.keyRefreshToken, refreshToken);
       }
       await _box.write(AppConstants.keyUser, user.toJson());
+      _notifyAuthSessionChanged();
 
       return Right(user);
     } on PlatformException catch (e) {
+      await _clearGoogleSignInSession();
       final code = e.code;
       final details = e.message ?? '';
       if (code == 'sign_in_failed' ||
@@ -230,9 +338,11 @@ class AuthRepository {
       }
       return Left(Failure(details.isNotEmpty ? details : 'Google sign-in failed ($code)'));
     } on DioException catch (e) {
+      await _clearGoogleSignInSession();
       final msg = _dioErrorMessage(e);
       return Left(Failure(msg));
     } catch (e) {
+      await _clearGoogleSignInSession();
       return Left(Failure(e.toString()));
     }
   }
@@ -254,6 +364,7 @@ class AuthRepository {
     await _box.remove(AppConstants.keyAccessToken);
     await _box.remove(AppConstants.keyRefreshToken);
     await _box.remove(AppConstants.keyUser);
+    _notifyAuthSessionChanged();
   }
 
   bool get isLoggedIn => accessToken != null;

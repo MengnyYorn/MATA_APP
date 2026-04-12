@@ -3,9 +3,8 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
-import '../theme/app_colors.dart';
-
-/// Central [Get.snackbar] styling: top placement, solid colors, no blur (readable).
+/// Central [Get.snackbar] styling: top placement, Material / Android-standard
+/// inverse surface colors, no leading icon, no blur.
 class AppSnackbar {
   AppSnackbar._();
 
@@ -18,50 +17,77 @@ class AppSnackbar {
     return EdgeInsets.fromLTRB(16, top, 16, 8);
   }
 
+  static ColorScheme? _scheme(BuildContext? ctx) =>
+      ctx != null ? Theme.of(ctx).colorScheme : null;
+
+  static TextTheme? _textTheme(BuildContext? ctx) =>
+      ctx != null ? Theme.of(ctx).textTheme : null;
+
+  /// All app toasts: same look as platform Snackbar (inverse surface).
   static void show(
     String title,
     String message, {
-    Color? backgroundColor,
-    Color colorText = Colors.white,
     Duration duration = const Duration(seconds: 3),
   }) {
+    final ctx = Get.context;
+    final scheme = _scheme(ctx);
+    final textTheme = _textTheme(ctx);
+
+    final bg = scheme?.inverseSurface ?? const Color(0xFF323232);
+    final fg = scheme?.onInverseSurface ?? const Color(0xFFE0E0E0);
+
+    final titleStyle = textTheme?.titleSmall?.copyWith(
+          color: fg,
+          fontWeight: FontWeight.w600,
+          height: 1.25,
+        ) ??
+        TextStyle(
+          color: fg,
+          fontSize: 14,
+          fontWeight: FontWeight.w600,
+          height: 1.25,
+        );
+
+    final bodyStyle = textTheme?.bodyMedium?.copyWith(
+          color: fg,
+          fontWeight: FontWeight.w400,
+          height: 1.35,
+        ) ??
+        TextStyle(
+          color: fg,
+          fontSize: 14,
+          fontWeight: FontWeight.w400,
+          height: 1.35,
+        );
+
     Get.snackbar(
-      title,
-      message,
+      '',
+      '',
+      titleText: Text(title, style: titleStyle),
+      messageText: Text(message, style: bodyStyle),
       snackPosition: SnackPosition.TOP,
       snackStyle: SnackStyle.FLOATING,
-      backgroundColor: backgroundColor ?? AppColors.primary,
-      colorText: colorText,
+      backgroundColor: bg,
+      icon: null,
+      shouldIconPulse: false,
+      leftBarIndicatorColor: null,
       barBlur: 0,
       overlayBlur: 0,
       margin: _margin(),
-      borderRadius: 12,
+      borderRadius: 4,
       duration: duration,
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
     );
   }
 
-  static void error(String title, String message) {
-    show(title, message, backgroundColor: AppColors.error);
-  }
+  static void error(String title, String message) => show(title, message);
 
   static void success(String title, String message,
       {Duration duration = const Duration(seconds: 3)}) {
-    show(title, message,
-        backgroundColor: AppColors.success, duration: duration);
+    show(title, message, duration: duration);
   }
 
-  /// Neutral notices (validation, hints) — dark bar, white text.
-  static void info(String title, String message) {
-    show(title, message, backgroundColor: AppColors.primary);
-  }
+  static void info(String title, String message) => show(title, message);
 
-  /// Warnings — solid amber tone, dark text for contrast.
-  static void warning(String title, String message) {
-    show(
-      title,
-      message,
-      backgroundColor: const Color(0xFFD97706),
-      colorText: Colors.white,
-    );
-  }
+  static void warning(String title, String message) => show(title, message);
 }

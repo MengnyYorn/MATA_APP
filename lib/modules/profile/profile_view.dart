@@ -1,11 +1,13 @@
 // lib/modules/profile/profile_view.dart
 
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
 import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_text_styles.dart';
 import '../../core/widgets/app_button.dart';
+import '../../data/models/user_model.dart';
 import '../../routes/app_routes.dart';
 import 'profile_controller.dart';
 
@@ -75,97 +77,149 @@ class _LoggedInProfile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final name = controller.displayName;
-    final email = controller.email;
-    final role = controller.roleLabel;
-    final initials = controller.initials;
+    return Obx(() {
+      final u = controller.user.value;
+      if (u == null) return const SizedBox();
 
-    return SingleChildScrollView(
-      padding: const EdgeInsets.all(24),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Center(
-            child: Column(
-              children: [
-                Container(
-                  width: 88,
-                  height: 88,
-                  decoration: const BoxDecoration(
-                    color: AppColors.primary,
-                    shape: BoxShape.circle,
+      final name = u.name.isNotEmpty ? u.name : 'Guest user';
+      final email = u.email.isNotEmpty ? u.email : '-';
+      final role = (u.role).toUpperCase();
+      final initials = u.initials;
+
+      return SingleChildScrollView(
+        padding: const EdgeInsets.all(24),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Center(
+              child: Column(
+                children: [
+                  _ProfilePhoto(user: u, initials: initials),
+                const SizedBox(height: 16),
+                  Text(
+                    name,
+                    style: AppTextStyles.headline2,
+                    textAlign: TextAlign.center,
                   ),
-                  child: Center(
+                  const SizedBox(height: 4),
+                  Text(
+                    email,
+                    style: AppTextStyles.bodyMedium
+                        .copyWith(color: AppColors.textSecondary),
+                    textAlign: TextAlign.center,
+                  ),
+                  const SizedBox(height: 8),
+                  Container(
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 10, vertical: 4),
+                    decoration: BoxDecoration(
+                      color: AppColors.divider,
+                      borderRadius: BorderRadius.circular(20),
+                    ),
                     child: Text(
-                      initials,
-                      style: AppTextStyles.headline2
-                          .copyWith(color: Colors.white),
+                      role,
+                      style: AppTextStyles.labelSmall
+                          .copyWith(color: AppColors.textSecondary),
                     ),
                   ),
-                ),
-                const SizedBox(height: 16),
-                Text(
-                  name,
-                  style: AppTextStyles.headline2,
-                  textAlign: TextAlign.center,
-                ),
-                const SizedBox(height: 4),
-                Text(
-                  email,
-                  style: AppTextStyles.bodyMedium
-                      .copyWith(color: AppColors.textSecondary),
-                  textAlign: TextAlign.center,
-                ),
-                const SizedBox(height: 8),
-                Container(
-                  padding: const EdgeInsets.symmetric(
-                      horizontal: 10, vertical: 4),
-                  decoration: BoxDecoration(
-                    color: AppColors.divider,
-                    borderRadius: BorderRadius.circular(20),
-                  ),
-                  child: Text(
-                    role,
-                    style: AppTextStyles.labelSmall
-                        .copyWith(color: AppColors.textSecondary),
-                  ),
-                ),
-              ],
+                ],
+              ),
+            ),
+            const SizedBox(height: 32),
+            Text(
+              'ACCOUNT',
+              style: AppTextStyles.labelSmall.copyWith(letterSpacing: 2),
+            ),
+            const SizedBox(height: 16),
+            _Tile(
+              icon: Icons.receipt_long_outlined,
+              title: 'My Orders',
+              subtitle: 'Track and view your order history',
+              onTap: controller.goToOrders,
+            ),
+            const SizedBox(height: 8),
+            _Tile(
+              icon: Icons.mail_outline_rounded,
+              title: 'Email',
+              subtitle: email,
+              onTap: null,
+            ),
+            const SizedBox(height: 32),
+            Text(
+              'SECURITY',
+              style: AppTextStyles.labelSmall.copyWith(letterSpacing: 2),
+            ),
+            const SizedBox(height: 16),
+            _Tile(
+              icon: Icons.logout_rounded,
+              title: 'Sign out',
+              subtitle: 'Sign out of this device',
+              onTap: controller.logout,
+              danger: true,
+            ),
+          ],
+        ),
+      );
+    });
+  }
+}
+
+class _ProfilePhoto extends StatelessWidget {
+  final UserModel user;
+  final String initials;
+
+  const _ProfilePhoto({required this.user, required this.initials});
+
+  @override
+  Widget build(BuildContext context) {
+    const size = 88.0;
+
+    if (user.hasNetworkAvatar) {
+      return ClipOval(
+        child: CachedNetworkImage(
+          imageUrl: user.avatar!.trim(),
+          width: size,
+          height: size,
+          fit: BoxFit.cover,
+          placeholder: (_, __) => Container(
+            width: size,
+            height: size,
+            color: AppColors.divider,
+            alignment: Alignment.center,
+            child: const SizedBox(
+              width: 24,
+              height: 24,
+              child: CircularProgressIndicator(strokeWidth: 2),
             ),
           ),
-          const SizedBox(height: 32),
-          Text(
-            'ACCOUNT',
-            style: AppTextStyles.labelSmall.copyWith(letterSpacing: 2),
-          ),
-          const SizedBox(height: 16),
-          _Tile(
-            icon: Icons.receipt_long_outlined,
-            title: 'My Orders',
-            subtitle: 'Track and view your order history',
-            onTap: controller.goToOrders,
-          ),
-          const SizedBox(height: 8),
-          _Tile(
-            icon: Icons.mail_outline_rounded,
-            title: 'Email',
-            subtitle: email,
-            onTap: null,
-          ),
-          const SizedBox(height: 32),
-          Text(
-            'SECURITY',
-            style: AppTextStyles.labelSmall.copyWith(letterSpacing: 2),
-          ),
-          const SizedBox(height: 16),
-          _Tile(
-            icon: Icons.logout_rounded,
-            title: 'Sign out',
-            subtitle: 'Sign out of this device',
-            onTap: controller.logout,
-            danger: true,
-          ),
-        ],
+          errorWidget: (_, __, ___) => _InitialsCircle(initials: initials),
+        ),
+      );
+    }
+
+    return _InitialsCircle(initials: initials);
+  }
+}
+
+class _InitialsCircle extends StatelessWidget {
+  final String initials;
+
+  const _InitialsCircle({required this.initials});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: 88,
+      height: 88,
+      decoration: const BoxDecoration(
+        color: AppColors.primary,
+        shape: BoxShape.circle,
+      ),
+      child: Center(
+        child: Text(
+          initials,
+          style: AppTextStyles.headline2.copyWith(color: Colors.white),
+        ),
       ),
     );
   }

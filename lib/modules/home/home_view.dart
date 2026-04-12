@@ -41,10 +41,15 @@ class HomeView extends GetView<HomeController> {
               children: [
                 const Text('MATA', style: AppTextStyles.headline3),
                 const SizedBox(height: 2),
-                Text(
-                  'Hello, ${controller.userName} 👋',
-                  style: AppTextStyles.bodySmall,
-                ),
+                Obx(() {
+                  // Depends on [AuthRepository.sessionRevision] so greeting
+                  // updates after login/logout without rebuilding the whole route.
+                  final _ = Get.find<AuthRepository>().sessionRevision.value;
+                  return Text(
+                    'Hello, ${controller.userName} 👋',
+                    style: AppTextStyles.bodySmall,
+                  );
+                }),
               ],
             ),
             actions: [
@@ -88,6 +93,24 @@ class HomeView extends GetView<HomeController> {
                 itemBuilder: (context) {
                   final auth = Get.find<AuthRepository>();
                   final loggedIn = auth.isLoggedIn;
+                  if (!loggedIn) {
+                    return [
+                      PopupMenuItem(
+                        onTap: () => Future.microtask(
+                          () => Get.toNamed(AppRoutes.login),
+                        ),
+                        child: const Row(children: [
+                          Icon(Icons.login_rounded,
+                              size: 20, color: AppColors.primary),
+                          SizedBox(width: 12),
+                          Text('Sign in',
+                              style: TextStyle(
+                                  color: AppColors.primary,
+                                  fontWeight: FontWeight.w600)),
+                        ]),
+                      ),
+                    ];
+                  }
                   return [
                     PopupMenuItem(
                       onTap: () =>
@@ -107,33 +130,17 @@ class HomeView extends GetView<HomeController> {
                         Text('My Orders'),
                       ]),
                     ),
-                    if (loggedIn)
-                      PopupMenuItem(
-                        onTap: () =>
-                            Future.microtask(controller.logout),
-                        child: const Row(children: [
-                          Icon(Icons.logout_rounded,
-                              size: 20, color: AppColors.error),
-                          SizedBox(width: 12),
-                          Text('Logout',
-                              style: TextStyle(color: AppColors.error)),
-                        ]),
-                      )
-                    else
-                      PopupMenuItem(
-                        onTap: () => Future.microtask(
-                          () => Get.toNamed(AppRoutes.login),
-                        ),
-                        child: const Row(children: [
-                          Icon(Icons.login_rounded,
-                              size: 20, color: AppColors.primary),
-                          SizedBox(width: 12),
-                          Text('Sign in',
-                              style: TextStyle(
-                                  color: AppColors.primary,
-                                  fontWeight: FontWeight.w600)),
-                        ]),
-                      ),
+                    PopupMenuItem(
+                      onTap: () =>
+                          Future.microtask(controller.logout),
+                      child: const Row(children: [
+                        Icon(Icons.logout_rounded,
+                            size: 20, color: AppColors.error),
+                        SizedBox(width: 12),
+                        Text('Logout',
+                            style: TextStyle(color: AppColors.error)),
+                      ]),
+                    ),
                   ];
                 },
               ),

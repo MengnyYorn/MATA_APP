@@ -22,7 +22,7 @@ class CheckoutController extends GetxController {
         _cart.clear();
         Get.offAllNamed(AppRoutes.orders);
         AppSnackbar.success(
-          'Order placed! 🎉',
+          'Order placed',
           'Order #${order.id} is confirmed.',
         );
       },

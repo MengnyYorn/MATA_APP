@@ -50,7 +50,46 @@ class LoginView extends GetView<LoginController> {
                 Text('Sign in to your account',
                     style: AppTextStyles.bodyMedium
                         .copyWith(color: AppColors.textSecondary)),
-                const SizedBox(height: 36),
+                const SizedBox(height: 20),
+
+                Obx(() => Row(
+                      children: [
+                        Expanded(
+                          child: OutlinedButton(
+                            style: OutlinedButton.styleFrom(
+                              backgroundColor: !controller.useOtp.value
+                                  ? AppColors.primary
+                                  : null,
+                              foregroundColor: !controller.useOtp.value
+                                  ? Colors.white
+                                  : AppColors.primary,
+                              side: const BorderSide(
+                                  color: AppColors.border, width: 1.5),
+                            ),
+                            onPressed: () => controller.useOtp.value = false,
+                            child: const Text('Password'),
+                          ),
+                        ),
+                        const SizedBox(width: 8),
+                        Expanded(
+                          child: OutlinedButton(
+                            style: OutlinedButton.styleFrom(
+                              backgroundColor: controller.useOtp.value
+                                  ? AppColors.primary
+                                  : null,
+                              foregroundColor: controller.useOtp.value
+                                  ? Colors.white
+                                  : AppColors.primary,
+                              side: const BorderSide(
+                                  color: AppColors.border, width: 1.5),
+                            ),
+                            onPressed: () => controller.useOtp.value = true,
+                            child: const Text('Email code'),
+                          ),
+                        ),
+                      ],
+                    )),
+                const SizedBox(height: 24),
 
                 // Email
                 AppTextField(
@@ -67,33 +106,81 @@ class LoginView extends GetView<LoginController> {
                 ),
                 const SizedBox(height: 20),
 
-                // Password
-                AppTextField(
-                  label: 'Password',
-                  hint: '••••••••',
-                  controller: controller.passwordCtrl,
-                  isPassword: true,
-                  prefixIcon: Icons.lock_outline_rounded,
-                  textInputAction: TextInputAction.done,
-                  onEditingComplete: controller.login,
-                  validator: (v) {
-                    if (v == null || v.isEmpty) return 'Password is required';
-                    if (v.length < 6) return 'At least 6 characters';
-                    return null;
-                  },
-                ),
-                const SizedBox(height: 12),
+                Obx(() => controller.useOtp.value
+                    ? Column(
+                        crossAxisAlignment: CrossAxisAlignment.stretch,
+                        children: [
+                          Obx(() => OutlinedButton(
+                                style: OutlinedButton.styleFrom(
+                                  minimumSize: const Size.fromHeight(48),
+                                ),
+                                onPressed: controller.isSendingLoginOtp.value
+                                    ? null
+                                    : controller.sendLoginOtp,
+                                child: controller.isSendingLoginOtp.value
+                                    ? const SizedBox(
+                                        height: 22,
+                                        width: 22,
+                                        child: CircularProgressIndicator(
+                                            strokeWidth: 2),
+                                      )
+                                    : const Text('Send sign-in code'),
+                              )),
+                          const SizedBox(height: 16),
+                          AppTextField(
+                            label: 'Code',
+                            hint: '000000',
+                            controller: controller.otpCtrl,
+                            keyboardType: TextInputType.number,
+                            prefixIcon: Icons.pin_outlined,
+                            textInputAction: TextInputAction.done,
+                            onEditingComplete: controller.login,
+                            validator: (v) {
+                              if (!controller.useOtp.value) return null;
+                              if (v == null || v.trim().isEmpty) {
+                                return 'Enter the code from your email';
+                              }
+                              if (v.trim().length < 4) {
+                                return 'Invalid code';
+                              }
+                              return null;
+                            },
+                          ),
+                        ],
+                      )
+                    : Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          AppTextField(
+                            label: 'Password',
+                            hint: '••••••••',
+                            controller: controller.passwordCtrl,
+                            isPassword: true,
+                            prefixIcon: Icons.lock_outline_rounded,
+                            textInputAction: TextInputAction.done,
+                            onEditingComplete: controller.login,
+                            validator: (v) {
+                              if (controller.useOtp.value) return null;
+                              if (v == null || v.isEmpty) {
+                                return 'Password is required';
+                              }
+                              if (v.length < 6) return 'At least 6 characters';
+                              return null;
+                            },
+                          ),
+                          const SizedBox(height: 12),
+                          Align(
+                            alignment: Alignment.centerRight,
+                            child: TextButton(
+                              onPressed: () {},
+                              child: Text('Forgot password?',
+                                  style: AppTextStyles.bodySmall
+                                      .copyWith(color: AppColors.primary)),
+                            ),
+                          ),
+                        ],
+                      )),
 
-                // Forgot password
-                Align(
-                  alignment: Alignment.centerRight,
-                  child: TextButton(
-                    onPressed: () {},
-                    child: Text('Forgot password?',
-                        style: AppTextStyles.bodySmall
-                            .copyWith(color: AppColors.primary)),
-                  ),
-                ),
                 const SizedBox(height: 24),
 
                 // Login button

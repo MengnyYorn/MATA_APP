@@ -22,6 +22,14 @@ class OrderDetailView extends GetView<OrderDetailController> {
           // stack is lost (e.g. after a refresh / deep-link).
           onPressed: () => Get.offNamed(AppRoutes.orders),
         ),
+        actions: [
+          Obx(() => IconButton(
+                icon: const Icon(Icons.refresh_rounded),
+                tooltip: 'Refresh',
+                onPressed:
+                    controller.isLoading.value ? null : controller.reloadOrder,
+              )),
+        ],
       ),
       body: Obx(() {
         if (controller.isLoading.value) {
@@ -30,9 +38,12 @@ class OrderDetailView extends GetView<OrderDetailController> {
         final order = controller.order.value;
         if (order == null) return const SizedBox();
 
-        return SingleChildScrollView(
-          padding: const EdgeInsets.all(24),
-          child: Column(
+        return RefreshIndicator(
+          onRefresh: controller.reloadOrder,
+          child: SingleChildScrollView(
+            physics: const AlwaysScrollableScrollPhysics(),
+            padding: const EdgeInsets.all(24),
+            child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               // Header
@@ -91,6 +102,7 @@ class OrderDetailView extends GetView<OrderDetailController> {
                 ),
               ),
             ],
+            ),
           ),
         );
       }),

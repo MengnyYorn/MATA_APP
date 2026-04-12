@@ -76,13 +76,15 @@ class RegisterController extends GetxController {
 
   Future<void> signInWithGoogle() async {
     isGoogleLoading.value = true;
-    final result = await _authRepo.signInWithGoogle();
-    isGoogleLoading.value = false;
-
-    result.fold(
-      (failure) =>
-          AppSnackbar.error('Google sign-in failed', failure.message),
-      (_) => popOrGoHome(),
-    );
+    try {
+      final result = await _authRepo.signInWithGoogle();
+      result.fold(
+        (failure) =>
+            AppSnackbar.error('Google sign-in failed', failure.message),
+        (_) => popOrGoHome(),
+      );
+    } finally {
+      isGoogleLoading.value = false;
+    }
   }
 }

@@ -8,16 +8,19 @@ import 'app_text_styles.dart';
 class AppTheme {
   AppTheme._();
 
-  static ThemeData get light => ThemeData(
-    useMaterial3: true,
-    colorScheme: ColorScheme.fromSeed(
+  static ThemeData get light {
+    final colorScheme = ColorScheme.fromSeed(
       seedColor: AppColors.primary,
       background: AppColors.background,
       surface: AppColors.surface,
       primary: AppColors.primary,
       secondary: AppColors.accent,
       error: AppColors.error,
-    ),
+    );
+
+    return ThemeData(
+    useMaterial3: true,
+    colorScheme: colorScheme,
     scaffoldBackgroundColor: AppColors.background,
     fontFamily: 'Inter',
     appBarTheme: const AppBarTheme(
@@ -96,9 +99,13 @@ class AppTheme {
     ),
     snackBarTheme: SnackBarThemeData(
       behavior: SnackBarBehavior.floating,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-      backgroundColor: AppColors.primary,
-      contentTextStyle: AppTextStyles.bodyMedium.copyWith(color: Colors.white),
+      elevation: 2,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(4)),
+      backgroundColor: colorScheme.inverseSurface,
+      contentTextStyle: AppTextStyles.bodyMedium.copyWith(
+        color: colorScheme.onInverseSurface,
+      ),
     ),
   );
+  }
 }

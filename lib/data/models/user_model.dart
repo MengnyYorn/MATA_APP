@@ -36,4 +36,12 @@ class UserModel {
     if (parts.length >= 2) return '${parts[0][0]}${parts[1][0]}'.toUpperCase();
     return name.substring(0, name.length.clamp(0, 2)).toUpperCase();
   }
+
+  /// Server may store initials ("AB") or a Google profile image URL.
+  bool get hasNetworkAvatar {
+    final a = avatar;
+    if (a == null || a.isEmpty) return false;
+    final t = a.trim().toLowerCase();
+    return t.startsWith('http://') || t.startsWith('https://');
+  }
 }

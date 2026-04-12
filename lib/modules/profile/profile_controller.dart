@@ -9,11 +9,21 @@ class ProfileController extends GetxController {
   final AuthRepository _authRepo = Get.find();
 
   final user = Rxn<UserModel>();
+  Worker? _sessionWorker;
 
   @override
   void onInit() {
     super.onInit();
     user.value = _authRepo.currentUser;
+    _sessionWorker = ever(_authRepo.sessionRevision, (_) {
+      user.value = _authRepo.currentUser;
+    });
+  }
+
+  @override
+  void onClose() {
+    _sessionWorker?.dispose();
+    super.onClose();
   }
 
   String get displayName => user.value?.name.isNotEmpty == true

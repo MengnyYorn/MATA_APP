@@ -73,7 +73,7 @@ class ProductDetailController extends GetxController {
     );
 
     AppSnackbar.success(
-      'Added to cart ✓',
+      'Added to cart',
       '${p.name} — ${selectedSize.value} / ${selectedColor.value}',
       duration: const Duration(seconds: 2),
     );
